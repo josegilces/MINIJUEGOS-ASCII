@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace MINIJUEGOS_ASCII
 {
@@ -33,6 +37,8 @@ namespace MINIJUEGOS_ASCII
          * -Clase
          *      Laberinto
          * -Miembros
+         *      -Variables
+         *          r de tipo Random
          *      -Arreglos
          *          Pantalla (Propiedad estática)
          *          CoordPersonaje (Propiedad estática)
@@ -245,9 +251,35 @@ namespace MINIJUEGOS_ASCII
         public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo();
         public static void Iniciar()
         {
+            Console.Clear();
+            // Asegúrate de que la aplicación tenga un contexto de Windows Forms
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            // Obtener la posición actual del cursor del mouse
+            Point posicionCursor = new Point();
+
             Console.WriteLine("Seleccione una opción:");
+            Console.SetCursorPosition(10, 10);
+            Console.Write("PIEDRA     PAPEL     TIJERA");
 
+            while (true)
+            {
+                posicionCursor = Cursor.Position;
+
+                // Convertir las coordenadas de pantalla a coordenadas de consola
+                Point posicionConsola = new Point(
+                    posicionCursor.X / Console.LargestWindowHeight,
+                    posicionCursor.Y / Console.LargestWindowHeight
+                );
+
+                // Mostrar la posición del cursor
+                Console.WriteLine("Posición del cursor: X = " + posicionConsola.X + ", Y = " + posicionConsola.Y);
+                //if (posicionConsola.X == 10 && posicionConsola.Y == 10)
+                //{
+                //    Console.WriteLine("EUREKA");
+                //}
+            }
         }
-
     }
 }
