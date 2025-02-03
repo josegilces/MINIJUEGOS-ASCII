@@ -108,7 +108,7 @@ namespace MINIJUEGOS_ASCII
                     break;
             }
         }
-        static void MaximizarVentana() //Ajustar el tamaño de la ventana de la consola al máximo tamaño posible
+        public static void MaximizarVentana() //Ajustar el tamaño de la ventana de la consola al máximo tamaño posible
         {
             int maxColumns = Console.LargestWindowWidth;
             int maxRows = Console.LargestWindowHeight;
@@ -124,7 +124,6 @@ namespace MINIJUEGOS_ASCII
         public static int[] CoordPersonaje = new int[2]; //Un arreglo de dos posiciones para guardar las coordenadas X y Y de nuestro personaje
         public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo(); //Objeto al que se le pueden asignar valores de lo que se teclea
         public static string EscenarioActual = "Zvezda";
-
 
         //Escenarios
         public static string[,] Zvezda = new string[100, 35]; //Conecta directamente con "Zarya"
@@ -268,38 +267,96 @@ namespace MINIJUEGOS_ASCII
 
     internal class PiedraPapelYTijeras
     {
-        public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo();
         public static void Iniciar()
         {
-            Console.Clear();
-            // Asegúrate de que la aplicación tenga un contexto de Windows Forms
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
+            MaximizarVentana(); // Maximizar la ventana de la consola
+            Console.Clear(); // Limpiar la pantalla de la consola
 
-            // Obtener la posición actual del cursor del mouse
-            Point posicionCursor = new Point();
+            Application.EnableVisualStyles(); // Habilitar estilos visuales para Windows Forms
+            Application.SetCompatibleTextRenderingDefault(false); // Configurar renderizado de texto compatible
 
-            Console.WriteLine("Seleccione una opción:");
-            Console.SetCursorPosition(10, 10);
-            Console.Write("PIEDRA     PAPEL     TIJERA");
+            IntPtr hConsole = GetStdHandle(-11); // Obtener el manejador de la consola de salida estándar
+            CONSOLE_FONT_INFO consoleFontInfo;
+            if (!GetCurrentConsoleFont(hConsole, false, out consoleFontInfo)) // Obtener información de la fuente de la consola
+            {
+                Console.WriteLine("Error al obtener la información de la fuente de la consola.");
+                return;
+            }
+
+            Console.WriteLine($"Tamaño de la fuente: X = {consoleFontInfo.dwFontSize.X}, Y = {consoleFontInfo.dwFontSize.Y}"); // Mostrar el tamaño de la fuente
+
+            if (consoleFontInfo.dwFontSize.X <= 0 || consoleFontInfo.dwFontSize.Y <= 0) // Validar que los valores sean correctos
+            {
+                Console.WriteLine("El tamaño de la fuente de la consola no es válido. Usando valores predeterminados.");
+                consoleFontInfo.dwFontSize = new Point(8, 16); // Asignar valores predeterminados comunes
+            }
+
+            Rectangle consoleWindow = GetConsoleWindowRectangle(); // Obtener el rectángulo de la ventana de la consola
 
             while (true)
             {
-                posicionCursor = Cursor.Position;
+                Point posicionCursor = Cursor.Position; // Obtener la posición actual del cursor del ratón
 
-                // Convertir las coordenadas de pantalla a coordenadas de consola
+                // Ajustar por los bordes de la ventana de la consola
+                int consoleLeft = consoleWindow.Left + 8; // Ajustar por el borde izquierdo de la consola
+                int consoleTop = consoleWindow.Top + 30; // Ajustar por el borde superior de la consola
+
+                // Convertir las coordenadas de la pantalla a coordenadas de la consola
                 Point posicionConsola = new Point(
-                    posicionCursor.X / Console.LargestWindowHeight,
-                    posicionCursor.Y / Console.LargestWindowHeight
+                    (posicionCursor.X - consoleLeft) / consoleFontInfo.dwFontSize.X,
+                    (posicionCursor.Y - consoleTop) / consoleFontInfo.dwFontSize.Y
                 );
 
-                // Mostrar la posición del cursor
-                Console.WriteLine("Posición del cursor: X = " + posicionConsola.X + ", Y = " + posicionConsola.Y);
-                //if (posicionConsola.X == 10 && posicionConsola.Y == 10)
-                //{
-                //    Console.WriteLine("EUREKA");
-                //}
+                Console.SetCursorPosition(0, 0); // Mover el cursor al inicio de la consola
+                Console.Write($"Posición del cursor: X = {posicionConsola.X}, Y = {posicionConsola.Y}   "); // Mostrar la posición del cursor en la consola
             }
+        }
+
+        private static void MaximizarVentana()
+        {
+            IntPtr hConsole = GetConsoleWindow(); // Obtener el manejador de la ventana de la consola
+            ShowWindow(hConsole, SW_MAXIMIZE); // Maximizar la ventana de la consola
+        }
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetStdHandle(int nStdHandle); // Obtener el manejador estándar de la consola
+
+        [DllImport("kernel32.dll")]
+        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont); // Obtener la información de la fuente de la consola
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CONSOLE_FONT_INFO
+        {
+            public int nFont; // Identificador de la fuente
+            public Point dwFontSize; // Tamaño de la fuente en píxeles
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect); // Obtener el rectángulo de la ventana
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left; // Coordenada izquierda de la ventana
+            public int Top; // Coordenada superior de la ventana
+            public int Right; // Coordenada derecha de la ventana
+            public int Bottom; // Coordenada inferior de la ventana
+        }
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetConsoleWindow(); // Obtener el manejador de la ventana de la consola
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); // Mostrar la ventana con un estado específico
+
+        private const int SW_MAXIMIZE = 3; // Constante para maximizar la ventana
+
+        private static Rectangle GetConsoleWindowRectangle()
+        {
+            IntPtr hConsole = GetConsoleWindow(); // Obtener el manejador de la ventana de la consola
+            RECT rect;
+            GetWindowRect(hConsole, out rect); // Obtener las coordenadas de la ventana
+            return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top); // Devolver el rectángulo de la consola
         }
     }
 
