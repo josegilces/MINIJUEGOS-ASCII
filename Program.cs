@@ -267,10 +267,14 @@ namespace MINIJUEGOS_ASCII
 
     internal class PiedraPapelYTijeras
     {
+        private static readonly string[] opciones = { "Piedra", "Papel", "Tijeras" }; // Opciones del juego
+        private static Random random = new Random(); // Generador de números aleatorios
+
         public static void Iniciar()
         {
             MaximizarVentana(); // Maximizar la ventana de la consola
             Console.Clear(); // Limpiar la pantalla de la consola
+            Console.CursorVisible = false; // Ocultar el cursor de la consola
 
             Application.EnableVisualStyles(); // Habilitar estilos visuales para Windows Forms
             Application.SetCompatibleTextRenderingDefault(false); // Configurar renderizado de texto compatible
@@ -283,11 +287,8 @@ namespace MINIJUEGOS_ASCII
                 return;
             }
 
-            Console.WriteLine($"Tamaño de la fuente: X = {consoleFontInfo.dwFontSize.X}, Y = {consoleFontInfo.dwFontSize.Y}"); // Mostrar el tamaño de la fuente
-
             if (consoleFontInfo.dwFontSize.X <= 0 || consoleFontInfo.dwFontSize.Y <= 0) // Validar que los valores sean correctos
             {
-                Console.WriteLine("El tamaño de la fuente de la consola no es válido. Usando valores predeterminados.");
                 consoleFontInfo.dwFontSize = new Point(8, 16); // Asignar valores predeterminados comunes
             }
 
@@ -296,67 +297,145 @@ namespace MINIJUEGOS_ASCII
             while (true)
             {
                 Point posicionCursor = Cursor.Position; // Obtener la posición actual del cursor del ratón
+                int consoleLeft = consoleWindow.Left + 8; // Ajuste por borde izquierdo
+                int consoleTop = consoleWindow.Top + 30; // Ajuste por borde superior
 
-                // Ajustar por los bordes de la ventana de la consola
-                int consoleLeft = consoleWindow.Left + 8; // Ajustar por el borde izquierdo de la consola
-                int consoleTop = consoleWindow.Top + 30; // Ajustar por el borde superior de la consola
-
-                // Convertir las coordenadas de la pantalla a coordenadas de la consola
+                // Convertir coordenadas de pantalla a coordenadas de la consola
                 Point posicionConsola = new Point(
                     (posicionCursor.X - consoleLeft) / consoleFontInfo.dwFontSize.X,
                     (posicionCursor.Y - consoleTop) / consoleFontInfo.dwFontSize.Y
                 );
 
-                Console.SetCursorPosition(0, 0); // Mover el cursor al inicio de la consola
-                Console.Write($"Posición del cursor: X = {posicionConsola.X}, Y = {posicionConsola.Y}   "); // Mostrar la posición del cursor en la consola
+                Console.SetCursorPosition(0, 0);
+                Console.WriteLine("Seleccione una opción pasando el cursor sobre ella:");
+
+                // Dibujar opciones en consola con sus representaciones en ASCII
+                for (int i = 0; i < opciones.Length; i++)
+                {
+                    Console.SetCursorPosition(10, 5 + i * 5);
+                    Console.WriteLine(opciones[i]);
+                    DibujarOpcion(opciones[i], 10, 6 + i * 5);
+                }
+
+                for (int i = 0; i < opciones.Length; i++)
+                {
+                    if (posicionConsola.X >= 10 && posicionConsola.X <= 20 && posicionConsola.Y == 5 + i * 5)
+                    {
+                        Jugar(opciones[i]);
+                        return;
+                    }
+                }
+            }
+        }
+
+        private static void Jugar(string eleccionUsuario)
+        {
+            string eleccionComputadora = opciones[random.Next(3)]; // Selección aleatoria de la computadora
+            Console.Clear();
+            Console.WriteLine($"Tú elegiste: {eleccionUsuario}");
+            Console.WriteLine($"La computadora eligió: {eleccionComputadora}");
+            DibujarOpcion(eleccionUsuario, 5, 5);
+            DibujarOpcion(eleccionComputadora, 25, 5);
+
+            if (eleccionUsuario == eleccionComputadora)
+            {
+                Console.WriteLine("¡Es un empate!");
+            }
+            else if ((eleccionUsuario == "Piedra" && eleccionComputadora == "Tijeras") ||
+                     (eleccionUsuario == "Papel" && eleccionComputadora == "Piedra") ||
+                     (eleccionUsuario == "Tijeras" && eleccionComputadora == "Papel"))
+            {
+                Console.WriteLine("¡Ganaste!");
+            }
+            else
+            {
+                Console.WriteLine("Perdiste. Inténtalo de nuevo.");
+            }
+
+            Console.WriteLine("Presiona cualquier tecla para salir...");
+            Console.ReadKey();
+        }
+
+        private static void DibujarOpcion(string opcion, int x, int y)
+        {
+            Console.SetCursorPosition(x, y);
+            switch (opcion)
+            {
+                case "Piedra":
+                    Console.WriteLine("   ███   ");
+                    Console.SetCursorPosition(x, y + 1);
+                    Console.WriteLine(" ███████ ");
+                    Console.SetCursorPosition(x, y + 2);
+                    Console.WriteLine(" ███████ ");
+                    Console.SetCursorPosition(x, y + 3);
+                    Console.WriteLine("   ███   ");
+                    break;
+                case "Papel":
+                    Console.WriteLine(" ███████ ");
+                    Console.SetCursorPosition(x, y + 1);
+                    Console.WriteLine(" ███████ ");
+                    Console.SetCursorPosition(x, y + 2);
+                    Console.WriteLine(" ███████ ");
+                    Console.SetCursorPosition(x, y + 3);
+                    Console.WriteLine(" ███████ ");
+                    break;
+                case "Tijeras":
+                    Console.WriteLine("    █  █  ");
+                    Console.SetCursorPosition(x, y + 1);
+                    Console.WriteLine("     ███  ");
+                    Console.SetCursorPosition(x, y + 2);
+                    Console.WriteLine("      █   ");
+                    Console.SetCursorPosition(x, y + 3);
+                    Console.WriteLine(" ██████  ");
+                    break;
             }
         }
 
         private static void MaximizarVentana()
         {
-            IntPtr hConsole = GetConsoleWindow(); // Obtener el manejador de la ventana de la consola
-            ShowWindow(hConsole, SW_MAXIMIZE); // Maximizar la ventana de la consola
+            IntPtr hConsole = GetConsoleWindow();
+            ShowWindow(hConsole, SW_MAXIMIZE);
         }
 
         [DllImport("kernel32.dll")]
-        private static extern IntPtr GetStdHandle(int nStdHandle); // Obtener el manejador estándar de la consola
+        private static extern IntPtr GetStdHandle(int nStdHandle);
 
         [DllImport("kernel32.dll")]
-        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont); // Obtener la información de la fuente de la consola
+        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct CONSOLE_FONT_INFO
         {
-            public int nFont; // Identificador de la fuente
-            public Point dwFontSize; // Tamaño de la fuente en píxeles
+            public int nFont;
+            public Point dwFontSize;
         }
 
         [DllImport("user32.dll")]
-        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect); // Obtener el rectángulo de la ventana
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
 
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
         {
-            public int Left; // Coordenada izquierda de la ventana
-            public int Top; // Coordenada superior de la ventana
-            public int Right; // Coordenada derecha de la ventana
-            public int Bottom; // Coordenada inferior de la ventana
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
         }
 
         [DllImport("kernel32.dll")]
-        private static extern IntPtr GetConsoleWindow(); // Obtener el manejador de la ventana de la consola
+        private static extern IntPtr GetConsoleWindow();
 
         [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); // Mostrar la ventana con un estado específico
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-        private const int SW_MAXIMIZE = 3; // Constante para maximizar la ventana
+        private const int SW_MAXIMIZE = 3;
 
         private static Rectangle GetConsoleWindowRectangle()
         {
-            IntPtr hConsole = GetConsoleWindow(); // Obtener el manejador de la ventana de la consola
+            IntPtr hConsole = GetConsoleWindow();
             RECT rect;
-            GetWindowRect(hConsole, out rect); // Obtener las coordenadas de la ventana
-            return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top); // Devolver el rectángulo de la consola
+            GetWindowRect(hConsole, out rect);
+            return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
         }
     }
 
