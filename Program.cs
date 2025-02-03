@@ -10,10 +10,7 @@ using System.Windows.Forms;
 using System.IO;
 using static System.Windows.Forms.LinkLabel;
 
-
-namespace MINIJUEGOS_ASCII
-{
-    /*PROYECTO FINAL - V1.0.2
+/*PROYECTO FINAL - V1.0.2
          * Registro de versiones y actualizaciones
          * 
          * Versión: 1.0.2
@@ -34,7 +31,7 @@ namespace MINIJUEGOS_ASCII
          *          yAnterior de tipo int
          *          celda de tipo string
          *      -Arreglos
-         *          Escenario1 de tipo string
+         *          Zvezda de tipo string
          *          lines de tipo string
          * 
          * Versión: 1.0.1
@@ -74,6 +71,9 @@ namespace MINIJUEGOS_ASCII
          *          BotonPresionado (Objeto estático)
          *          
          */
+
+namespace MINIJUEGOS_ASCII
+{
     internal class Menú
     {
         static void Main(string[] args)
@@ -123,9 +123,13 @@ namespace MINIJUEGOS_ASCII
         //                                           X=100 Columnas y Y=35 filas
         public static int[] CoordPersonaje = new int[2]; //Un arreglo de dos posiciones para guardar las coordenadas X y Y de nuestro personaje
         public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo(); //Objeto al que se le pueden asignar valores de lo que se teclea
+        public static string EscenarioActual = "Zvezda";
+
 
         //Escenarios
-        public static string[,] Escenario1 = new string[100, 35];
+        public static string[,] Zvezda = new string[100, 35]; //Conecta directamente con "Zarya"
+        public static string[,] Zarya = new string[100, 35];
+        public static string[,] MLM = new string[100, 35]; //Conecta mediante ascensor con "Zvezda"
 
         public static void Iniciar() //Método que "arranca" nuestro minijuego
         {
@@ -135,14 +139,25 @@ namespace MINIJUEGOS_ASCII
             Console.CursorVisible = false; //Ocultamos el cursor para que no moleste
 
             //Ejecución de funciones fundamentales para el juego
-            PrepararEscenario("escenario1.txt", Escenario1); //Ejecutamos el método PrepararEscenario para cargar nuestro "escenario" en el arreglo Pantalla
-            PintarEscenario(Escenario1, 50, 0); //Imprimimos por primera vez nuestro escenario
+
+            PrepararEscenario("Zvezda.txt", Zvezda); //Ejecutamos el método PrepararEscenario para cargar nuestro "escenario" en los arreglos
+            PrepararEscenario("Zarya.txt", Zarya);
+            PrepararEscenario("MLM.txt", MLM);
+
+            PintarEscenario(Zvezda, 50, 0); //Imprimimos por primera vez nuestro primer escenario "Zvezda"
 
             while (true) //Ciclo while infinito que hace "correr" el juego y no se detenga
             {
                 if (Console.KeyAvailable)  //Comprobamos si se lee una tecla
                 {
-                    Movimiento(Escenario1);
+                    if (EscenarioActual == "Zvezda")
+                    {
+                        Movimiento(Zvezda);
+                    }
+                    if (EscenarioActual == "Zarya")
+                    {
+                        Movimiento(Zvezda);
+                    }
                 }
             }
         }
@@ -164,6 +179,8 @@ namespace MINIJUEGOS_ASCII
         {
             CoordPersonaje[0] = xP; CoordPersonaje[1] = yP; //Establece la posición de nuestro personaje
 
+            Console.Clear();
+
             for (int y = 0; y < 35; y++)
             {
                 Console.SetCursorPosition(0, y);
@@ -179,18 +196,35 @@ namespace MINIJUEGOS_ASCII
         }
         public static void Movimiento(string[,] escenario)
         {
-            BotonPresionado = Console.ReadKey(true); // Evita que se muestre la tecla presionada
+            BotonPresionado = Console.ReadKey(true); //true evita que se muestre la tecla presionada
 
             int xAnterior = CoordPersonaje[0];
-            int yAnterior = CoordPersonaje[1]; // Guarda la posición actual antes de moverse
+            int yAnterior = CoordPersonaje[1]; //Guarda la posición actual antes de moverse
 
-            if (BotonPresionado.Key == ConsoleKey.DownArrow && yAnterior < 49 && EsPosicionValida(escenario, new int[] { xAnterior, yAnterior + 1 }))
+            if (BotonPresionado.Key == ConsoleKey.DownArrow && yAnterior < 34 && EsPosicionValida(escenario, new int[] { xAnterior, yAnterior + 1 }))
             {
-                CoordPersonaje[1]++;
+                if (!SiguenteEscenario(escenario, new int[] { xAnterior, yAnterior + 1 }))
+                {
+                    CoordPersonaje[1]++;
+                }
+                else
+                {
+                    PintarEscenario(Zarya, 50, 30);
+                    EscenarioActual = "Zarya";
+                }
+
             }
             else if (BotonPresionado.Key == ConsoleKey.UpArrow && yAnterior > 0 && EsPosicionValida(escenario, new int[] { xAnterior, yAnterior - 1 }))
             {
-                CoordPersonaje[1]--;
+                if (!SiguenteEscenario(escenario, new int[] { xAnterior, yAnterior - 1 }))
+                {
+                    CoordPersonaje[1]--;
+                }
+                else
+                {
+                    PintarEscenario(Zarya, 50, 34);
+                    EscenarioActual = "Zarya";
+                }
             }
             else if (BotonPresionado.Key == ConsoleKey.LeftArrow && xAnterior > 0 && EsPosicionValida(escenario, new int[] { xAnterior - 1, yAnterior }))
             {
@@ -201,7 +235,7 @@ namespace MINIJUEGOS_ASCII
                 CoordPersonaje[0]++;
             }
 
-            ActualizarEscenario(escenario, xAnterior, yAnterior); // Enviamos la posición anterior para que se restaure bien
+            ActualizarEscenario(escenario, xAnterior, yAnterior); //Enviamos la posición anterior para que se restaure bien
         }
 
         public static void ActualizarEscenario(string[,] escenario, int xAnterior, int yAnterior)
@@ -219,6 +253,16 @@ namespace MINIJUEGOS_ASCII
         {
             string celda = escenario[coordenadas[0], coordenadas[1]];
             return celda != "#" && celda != "║" && celda != "(" && celda != ")";
+        }
+        public static bool SiguenteEscenario(string[,] escenario, int[] coordenadas)
+        {
+            string celda = escenario[coordenadas[0], coordenadas[1]];
+            return celda == "S";
+        }
+        public static bool Ascensor(string[,] escenario, int[] coordenadas)
+        {
+            string celda = escenario[coordenadas[0], coordenadas[1]];
+            return celda == "A" || celda == "S";
         }
     }
 
