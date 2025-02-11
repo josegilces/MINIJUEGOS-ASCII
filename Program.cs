@@ -95,13 +95,13 @@ namespace MINIJUEGOS_ASCII
             switch (Opcion)
             {
                 case "1":
-                    Laberinto.Iniciar();
+                    Laberinto.Menu();
                     break;
                 case "2":
                     PiedraPapelYTijeras.Iniciar();
                     break;
                 case "3":
-                    // Lógica para el Minijuego 3
+                    Ahorcado.Iniciar();
                     break;
                 default:
                     Console.WriteLine("Opción no válida.");
@@ -130,6 +130,34 @@ namespace MINIJUEGOS_ASCII
         public static string[,] Zarya = new string[100, 35];
         public static string[,] MLM = new string[100, 35]; //Conecta mediante ascensor con "Zvezda"
 
+        public static void Menu()
+        {
+            string filePath = "MenuInicio.txt"; // Ruta del archivo de texto
+            string[] lines = File.ReadAllLines(filePath); // Leer todas las líneas del archivo
+            string[,] escenario = new string[100, 35];
+
+            // Llenar el arreglo con los caracteres del archivo
+            for (int y = 0; y < lines.Length; y++)
+            {
+                for (int x = 0; x < lines[y].Length; x++)
+                {
+                    escenario[x, y] = lines[y][x].ToString();
+                }
+            }
+
+            // Imprimir el arreglo
+            Console.Clear();
+
+            for (int y = 0; y < 35; y++)
+            {
+                Console.SetCursorPosition(0, y);
+                for (int x = 0; x < 100; x++)
+                {
+                    Console.Write(escenario[x, y]);
+                }
+            }
+
+        }
         public static void Iniciar() //Método que "arranca" nuestro minijuego
         {
             //Ajustes previos para una mejor estética visual
@@ -263,6 +291,50 @@ namespace MINIJUEGOS_ASCII
             string celda = escenario[coordenadas[0], coordenadas[1]];
             return celda == "A" || celda == "S";
         }
+
+
+        // C O D I G O  D E L   F U N C I O N A M I E N T O   D E L   M O U S E
+        
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetStdHandle(int nStdHandle); // Obtener el identificador del dispositivo estándar (consola)
+
+        [DllImport("kernel32.dll")]
+        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont); // Obtener información sobre la fuente de la consola
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CONSOLE_FONT_INFO
+        {
+            public int nFont; // Identificador de la fuente
+            public Point dwFontSize; // Tamaño de la fuente en la consola
+        }
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect); // Obtener el rectángulo que delimita la ventana de la consola
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); // Cambiar el estado de la ventana de la consola
+
+        private const int SW_MAXIMIZE = 3; // Constante para maximizar la ventana
+
+        private static Rectangle GetConsoleWindowRectangle()
+        {
+            IntPtr hConsole = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
+            RECT rect;
+            GetWindowRect(hConsole, out rect); // Obtener las coordenadas de la ventana de la consola
+            return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top); // Convertir la estructura RECT en un objeto Rectangle
+        }
     }
 
     internal class PiedraPapelYTijeras
@@ -393,25 +465,26 @@ namespace MINIJUEGOS_ASCII
 
         private static void MaximizarVentana()
         {
-            IntPtr hConsole = GetConsoleWindow();
-            ShowWindow(hConsole, SW_MAXIMIZE);
+            IntPtr hConsole = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
+            ShowWindow(hConsole, SW_MAXIMIZE); // Maximizar la ventana de la consola
         }
 
+        // Importaciones de funciones de la API de Windows para manipular la consola
         [DllImport("kernel32.dll")]
-        private static extern IntPtr GetStdHandle(int nStdHandle);
+        private static extern IntPtr GetStdHandle(int nStdHandle); // Obtener el identificador del dispositivo estándar (consola)
 
         [DllImport("kernel32.dll")]
-        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont);
+        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont); // Obtener información sobre la fuente de la consola
 
         [StructLayout(LayoutKind.Sequential)]
         private struct CONSOLE_FONT_INFO
         {
-            public int nFont;
-            public Point dwFontSize;
+            public int nFont; // Identificador de la fuente
+            public Point dwFontSize; // Tamaño de la fuente en la consola
         }
 
         [DllImport("user32.dll")]
-        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect); // Obtener el rectángulo que delimita la ventana de la consola
 
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT
@@ -423,19 +496,153 @@ namespace MINIJUEGOS_ASCII
         }
 
         [DllImport("kernel32.dll")]
-        private static extern IntPtr GetConsoleWindow();
+        private static extern IntPtr GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
 
         [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); // Cambiar el estado de la ventana de la consola
 
-        private const int SW_MAXIMIZE = 3;
+        private const int SW_MAXIMIZE = 3; // Constante para maximizar la ventana
 
         private static Rectangle GetConsoleWindowRectangle()
         {
-            IntPtr hConsole = GetConsoleWindow();
+            IntPtr hConsole = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
             RECT rect;
-            GetWindowRect(hConsole, out rect);
-            return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top);
+            GetWindowRect(hConsole, out rect); // Obtener las coordenadas de la ventana de la consola
+            return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top); // Convertir la estructura RECT en un objeto Rectangle
+        }
+    }
+
+    internal class Ahorcado
+    {
+        public static void Iniciar()
+        {
+            Console.Clear(); // Limpiar la pantalla
+            Console.SetCursorPosition(0, 0); // Asegurar que el cursor esté en la posición inicial
+
+            // Lista de palabras y sus pistas
+            Dictionary<string, string> palabras = new Dictionary<string, string>
+        {
+            { "compilador", "Traduce código fuente a código máquina." },
+            { "algoritmo", "Conjunto de pasos para resolver un problema." },
+            { "variable", "Espacio en memoria que almacena un valor." },
+            { "funcion", "Bloque de código reutilizable." },
+            { "recursividad", "Cuando una función se llama a sí misma." },
+            { "programacion", "Proceso de escribir código para computadoras." },
+            { "depuracion", "Proceso de encontrar y corregir errores." },
+            { "framework", "Conjunto de herramientas para desarrollo." },
+            { "matriz", "Estructura de datos en filas y columnas." },
+            { "puntero", "Variable que almacena direcciones de memoria." },
+            { "interfaz", "Define métodos sin implementarlos." },
+            { "herencia", "Mecanismo de reutilización en POO." },
+            { "clase", "Plantilla para crear objetos en POO." }
+        };
+
+            Random aleatorio = new Random(); // Generador de números aleatorios
+                                             // Seleccionar una palabra aleatoria del diccionario
+            KeyValuePair<string, string> palabraSeleccionada = palabras.ElementAt(aleatorio.Next(palabras.Count));
+            string palabraSecreta = palabraSeleccionada.Key; // La palabra a adivinar
+            string pista = palabraSeleccionada.Value; // La pista de la palabra
+            char[] palabraAdivinada = new string('_', palabraSecreta.Length).ToCharArray(); // Representación oculta de la palabra
+            HashSet<char> letrasIncorrectas = new HashSet<char>(); // Conjunto de letras erróneas ingresadas
+            int intentosRestantes = 7; // Número de intentos disponibles
+
+            // Bucle del juego
+            while (intentosRestantes > 0 && new string(palabraAdivinada) != palabraSecreta)
+            {
+                Console.Clear();
+                DibujarAhorcado(7 - intentosRestantes); // Dibujar el estado actual del ahorcado
+                Console.WriteLine("Pista: " + pista);
+                Console.WriteLine("Palabra: " + new string(palabraAdivinada));
+                Console.WriteLine("Letras incorrectas: " + string.Join(", ", letrasIncorrectas));
+                Console.Write("Ingresa una letra: ");
+                char intento = Console.ReadKey().KeyChar; // Leer la letra ingresada por el usuario
+
+                // Verificar si la letra está en la palabra secreta
+                if (palabraSecreta.Contains(intento))
+                {
+                    for (int i = 0; i < palabraSecreta.Length; i++)
+                    {
+                        if (palabraSecreta[i] == intento)
+                        {
+                            palabraAdivinada[i] = intento; // Reemplazar el guion bajo con la letra adivinada
+                        }
+                    }
+                }
+                else
+                {
+                    letrasIncorrectas.Add(intento); // Agregar la letra al conjunto de errores
+                    intentosRestantes--; // Reducir el número de intentos
+                }
+            }
+
+            Console.Clear();
+            DibujarAhorcado(7 - intentosRestantes);
+            // Verificar si el usuario ha ganado o perdido
+            if (new string(palabraAdivinada) == palabraSecreta)
+            {
+                Console.WriteLine("\n¡Felicidades! Has adivinado la palabra: " + palabraSecreta);
+            }
+            else
+            {
+                Console.WriteLine("\nPerdiste. La palabra era: " + palabraSecreta);
+            }
+        }
+
+        static void DibujarAhorcado(int errores)
+        {
+            // Representación gráfica del ahorcado en distintas etapas
+            string[] dibujo = new string[]
+            {
+            "  +---+",
+            "  |   |",
+            "      |",
+            "      |",
+            "      |",
+            "      |",
+            "========="
+            };
+
+            // Modificar el dibujo según la cantidad de errores
+            switch (errores)
+            {
+                case 1:
+                    dibujo[2] = "  O   |";
+                    break;
+                case 2:
+                    dibujo[2] = "  O   |";
+                    dibujo[3] = "  |   |";
+                    break;
+                case 3:
+                    dibujo[2] = "  O   |";
+                    dibujo[3] = " /|   |";
+                    break;
+                case 4:
+                    dibujo[2] = "  O   |";
+                    dibujo[3] = " /|\\  |";
+                    break;
+                case 5:
+                    dibujo[2] = "  O   |";
+                    dibujo[3] = " /|\\  |";
+                    dibujo[4] = " /    |";
+                    break;
+                case 6:
+                    dibujo[2] = "  O   |";
+                    dibujo[3] = " /|\\  |";
+                    dibujo[4] = " / \\  |";
+                    break;
+                case 7:
+                    dibujo[2] = "  O   |";
+                    dibujo[3] = " /|\\  |";
+                    dibujo[4] = " / \\  |";
+                    dibujo[5] = "¡AHORCADO!";
+                    break;
+            }
+
+            // Imprimir el dibujo del ahorcado
+            foreach (var linea in dibujo)
+            {
+                Console.WriteLine(linea);
+            }
         }
     }
 
