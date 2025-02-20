@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.IO;
-using static System.Windows.Forms.LinkLabel;
 
 /*PROYECTO FINAL - V1.0.2
          * Registro de versiones y actualizaciones
@@ -76,18 +72,22 @@ namespace MINIJUEGOS_ASCII
 {
     internal class Menú
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
-            //MaximizarVentana();
+            // Limpia y restablece ajustes de la consola, antes de iniciar el Menú principal, ya que se podrá regresar aquí desde cualquier minijuego
+            Console.Clear();
+            Console.CursorVisible = true;
+            Console.SetCursorPosition(0,0);
 
             Console.WriteLine("Menú:");
             Console.WriteLine("1. Laberinto");
             Console.WriteLine("2. Pidra, papel y tijeras");
             Console.WriteLine("3. El ahorcado");
+            Console.WriteLine("4. Salir");
             Console.WriteLine("Seleccione una opción:");
 
-            //Info.de desarrollador
-            Console.SetBufferSize(120, 35);
+            ////Info.de desarrollador
+            //Console.SetBufferSize(120, 35);
             //Console.WriteLine($"Buffer: {Console.BufferWidth}x{Console.BufferHeight}");
 
             var Opcion = Console.ReadLine();
@@ -103,40 +103,76 @@ namespace MINIJUEGOS_ASCII
                 case "3":
                     Ahorcado.Iniciar();
                     break;
+                case "4":
+                    Console.WriteLine("Saliendo...");
+                    System.Threading.Thread.Sleep(3000); // Pausa de 5 segundos
+                    break;
                 default:
                     Console.WriteLine("Opción no válida.");
                     break;
             }
         }
-        public static void MaximizarVentana() //Ajustar el tamaño de la ventana de la consola al máximo tamaño posible
-        {
-            int maxColumns = Console.LargestWindowWidth;
-            int maxRows = Console.LargestWindowHeight;
+        //public static void MaximizarVentana() //Ajustar el tamaño de la ventana de la consola al máximo tamaño posible
+        //{
+        //    int maxColumns = Console.LargestWindowWidth;
+        //    int maxRows = Console.LargestWindowHeight;
 
-            Console.SetWindowSize(maxColumns, maxRows);
-            Console.SetBufferSize(maxColumns, maxRows);
-        }
+        //    Console.SetWindowSize(maxColumns, maxRows);
+        //    Console.SetBufferSize(maxColumns, maxRows);
+        //}
     }
     internal class Laberinto
     {
         //MIEMBROS FUNDAMENTALES PARA EL JUEGO
         //                                           X=100 Columnas y Y=35 filas
         public static int[] CoordPersonaje = new int[2]; //Un arreglo de dos posiciones para guardar las coordenadas X y Y de nuestro personaje
-        public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo(); //Objeto al que se le pueden asignar valores de lo que se teclea
+        public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo(); // Objeto al que se le pueden asignar valores de lo que se teclea
         public static string EscenarioActual = "Zvezda";
 
-        //Escenarios
-        public static string[,] Zvezda = new string[100, 35]; //Conecta directamente con "Zarya"
-        public static string[,] Zarya = new string[100, 35];
-        public static string[,] MLM = new string[100, 35]; //Conecta mediante ascensor con "Zvezda"
+        //MIEMBROS NECESARIOS PARA LA FUNCIONALIDAD DE ENTRADA POR RATÓN
+        public static CONSOLE_FONT_INFO consoleFontInfo;
+        public static Rectangle consoleWindow; // Nos servirá después para obtener el rectángulo de la ventana de la consola
 
-        public static void Menu()
+        // Escenarios
+        public static string[,] Zvezda = new string[100, 35]; // Conecta directamente con "Zarya"
+        public static string[,] Zarya = new string[100, 35];
+        public static string[,] MLM = new string[100, 35]; // Conecta mediante ascensor con "Zvezda"
+
+        public static void PrepararAmbienteConsola() // Forma parte de la funcionalidad de entrada por ratón
         {
-            string filePath = "MenuInicio.txt"; // Ruta del archivo de texto
+            // Ajustes previos para asegurarnos que el minijuego se vea bien visualmente
+            MaximizarVentana(); // Maximizar la ventana de la consola
+            Console.Clear(); // Limpiar la pantalla de la consola
+            Console.CursorVisible = false; // Ocultar el cursor de la consola
+
+            Application.EnableVisualStyles(); // Habilitar estilos visuales para Windows Forms
+            Application.SetCompatibleTextRenderingDefault(false); // Configurar renderizado de texto compatible
+
+            // Ajustes previos para la funcionalidad encargada de leer la entrada por ratón
+
+            IntPtr hConsole = GetStdHandle(-11); // Obtener el manejador de la consola de salida estánda
+
+            if (!GetCurrentConsoleFont(hConsole, false, out consoleFontInfo)) // Obtener información de la fuente de la consola
+            {
+                Console.WriteLine("Error al obtener la información de la fuente de la consola.");
+                return;
+            }
+
+            if (consoleFontInfo.dwFontSize.X <= 0 || consoleFontInfo.dwFontSize.Y <= 0) // Validar que los valores sean correctos
+            {
+                consoleFontInfo.dwFontSize = new Point(8, 16); // Asignar valores predeterminados comunes
+            }
+
+            consoleWindow = GetConsoleWindowRectangle(); // Obtener el rectángulo de la ventana de la consola
+        }
+        public static void CargarMenu() // Carga e imprime el menú del minijuego
+        {
+            // Cargar en memoria el menú gráfico
+            string filePath = "MenuInicio.txt"; // Ruta del archivo de texto, el cual contiene el menú con gráficos ASCII
             string[] lines = File.ReadAllLines(filePath); // Leer todas las líneas del archivo
             string[,] escenario = new string[100, 35];
 
-            // Llenar el arreglo con los caracteres del archivo
+            // Llenar el arreglo bidimensional 'escenario' con los caracteres del archivo previamente guardados en el arreglo 'lines'
             for (int y = 0; y < lines.Length; y++)
             {
                 for (int x = 0; x < lines[y].Length; x++)
@@ -145,9 +181,7 @@ namespace MINIJUEGOS_ASCII
                 }
             }
 
-            // Imprimir el arreglo
-            Console.Clear();
-
+            // Imprimir el arreglo que contiene nuestro menú gráfico
             for (int y = 0; y < 35; y++)
             {
                 Console.SetCursorPosition(0, y);
@@ -156,26 +190,68 @@ namespace MINIJUEGOS_ASCII
                     Console.Write(escenario[x, y]);
                 }
             }
-
         }
-        public static void Iniciar() //Método que "arranca" nuestro minijuego
+        public static void Menu() // Punto de llamada de las funcionalidades para el menú del minijuego
         {
-            //Ajustes previos para una mejor estética visual
+            PrepararAmbienteConsola();
+            CargarMenu();
+
+            string[] opciones = { "Iniciar", "Salir" }; // Opciones del menú
+
+            while (true) // Bluce encargado de mantener ejecutando las funcionalidades para el menú hasta que se elija una de las dos opciones
+            {
+                Point posicionCursor = Cursor.Position; // Obtener la posición actual del cursor del ratón
+                int consoleLeft = consoleWindow.Left + 8; // Ajuste por borde izquierdo
+                int consoleTop = consoleWindow.Top + 30; // Ajuste por borde superior
+
+                // Convertir coordenadas de pantalla a coordenadas de la consola
+                Point posicionConsola = new Point(
+                    (posicionCursor.X - consoleLeft) / consoleFontInfo.dwFontSize.X,
+                    (posicionCursor.Y - consoleTop) / consoleFontInfo.dwFontSize.Y
+                );
+
+                Console.SetCursorPosition(0, 0);
+
+                // Verificar si se presionó el botón izquierdo del mouse
+                if (Control.MouseButtons == MouseButtons.Left)
+                {
+                    // Coordenadas del "botón" Iniciar
+                    if (posicionConsola.X >= 55 && posicionConsola.X <= 79 && posicionConsola.Y >= 20 && posicionConsola.Y <= 24)
+                    {
+                        SendKeys.SendWait("{ESCAPE}"); // Simular la pulsación de la tecla Escape para no interrumpir la ejecución del programa 
+                        Iniciar(); // Inicia el juego
+                        break;
+                    }
+
+                    // Coordenadas del "botón" Salir
+                    if (posicionConsola.X >= 57 && posicionConsola.X <= 77 && posicionConsola.Y >= 28 && posicionConsola.Y <= 32)
+                    {
+                        SendKeys.SendWait("{ESCAPE}");
+                        string[] args = { }; // Crear un argumento vacío para args
+                        Menú.Main(args);
+                        break;
+                    }
+                }
+            }
+        }
+        public static void Iniciar() // Método que "arranca" nuestro minijuego
+        {
+            // Ajustes previos para una mejor estética visual
             Console.Clear();
             Console.SetCursorPosition(0, 0);
-            Console.CursorVisible = false; //Ocultamos el cursor para que no moleste
+            Console.CursorVisible = false; // Ocultamos el cursor para que no moleste
 
-            //Ejecución de funciones fundamentales para el juego
+            // Carga en memoria los mapas para el minijuego
 
-            PrepararEscenario("Zvezda.txt", Zvezda); //Ejecutamos el método PrepararEscenario para cargar nuestro "escenario" en los arreglos
+            PrepararEscenario("Zvezda.txt", Zvezda); // Ejecutamos el método PrepararEscenario para cargar nuestro "escenario" en los arreglos
             PrepararEscenario("Zarya.txt", Zarya);
             PrepararEscenario("MLM.txt", MLM);
 
-            PintarEscenario(Zvezda, 50, 0); //Imprimimos por primera vez nuestro primer escenario "Zvezda"
+            PintarEscenario(Zvezda, 49, 27); // Imprimimos por primera vez nuestro primer escenario "Zvezda"
 
-            while (true) //Ciclo while infinito que hace "correr" el juego y no se detenga
+            while (true) // Bluce encargado de mantener ejecutando el minijuego
             {
-                if (Console.KeyAvailable)  //Comprobamos si se lee una tecla
+                if (Console.KeyAvailable)  // Comprobamos si se lee una tecla
                 {
                     if (EscenarioActual == "Zvezda")
                     {
@@ -202,9 +278,9 @@ namespace MINIJUEGOS_ASCII
                 }
             }
         }
-        public static void PintarEscenario(string[,] escenario, int xP, int yP) //Imprimirá en pantalla nuestro escenario que se encuentra en el arreglo Pantalla
+        public static void PintarEscenario(string[,] escenario, int NuevaCoordXPersonaje, int NuevaCoordYPersonaje) // Imprime el escenario que recibe como parámetro de entrada y también modifica la posición del jugador
         {
-            CoordPersonaje[0] = xP; CoordPersonaje[1] = yP; //Establece la posición de nuestro personaje
+            CoordPersonaje[0] = NuevaCoordXPersonaje; CoordPersonaje[1] = NuevaCoordYPersonaje; //Establece la posición de nuestro personaje
 
             Console.Clear();
 
@@ -216,14 +292,14 @@ namespace MINIJUEGOS_ASCII
                     Console.Write(escenario[x, y]);
                 }
             }
-            Console.SetCursorPosition(xP, yP);
+            Console.SetCursorPosition(NuevaCoordXPersonaje, NuevaCoordYPersonaje);
             Console.Write("P");
 
 
         }
         public static void Movimiento(string[,] escenario)
         {
-            BotonPresionado = Console.ReadKey(true); //true evita que se muestre la tecla presionada
+            BotonPresionado = Console.ReadKey(true); // true evita que se muestre la tecla presionada
 
             int xAnterior = CoordPersonaje[0];
             int yAnterior = CoordPersonaje[1]; //Guarda la posición actual antes de moverse
@@ -292,17 +368,28 @@ namespace MINIJUEGOS_ASCII
             return celda == "A" || celda == "S";
         }
 
+        private static void MaximizarVentana()
+        {
+            IntPtr identificadorConsola = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
+            ShowWindow(identificadorConsola, 3); // Maximizar la ventana de la consola
+
+            /* ShowWindow(1): Muestra la ventana en su tamaño y posición originales.
+             * ShowWindow(2): Muestra la ventana minimizada.
+             * ShowWindow(3): Maximiza la ventana para que ocupe toda la pantalla
+             */
+        }
+
 
         // C O D I G O  D E L   F U N C I O N A M I E N T O   D E L   M O U S E
-        
+
         [DllImport("kernel32.dll")]
         private static extern IntPtr GetStdHandle(int nStdHandle); // Obtener el identificador del dispositivo estándar (consola)
 
         [DllImport("kernel32.dll")]
-        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont); // Obtener información sobre la fuente de la consola
+        private static extern bool GetCurrentConsoleFont(IntPtr identificadorConsolaOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont); // Obtener información sobre la fuente de la consola
 
         [StructLayout(LayoutKind.Sequential)]
-        private struct CONSOLE_FONT_INFO
+        public struct CONSOLE_FONT_INFO
         {
             public int nFont; // Identificador de la fuente
             public Point dwFontSize; // Tamaño de la fuente en la consola
@@ -326,18 +413,16 @@ namespace MINIJUEGOS_ASCII
         [DllImport("user32.dll")]
         private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow); // Cambiar el estado de la ventana de la consola
 
-        private const int SW_MAXIMIZE = 3; // Constante para maximizar la ventana
-
         private static Rectangle GetConsoleWindowRectangle()
         {
-            IntPtr hConsole = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
+            IntPtr identificadorConsola = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
             RECT rect;
-            GetWindowRect(hConsole, out rect); // Obtener las coordenadas de la ventana de la consola
+            GetWindowRect(identificadorConsola, out rect); // Obtener las coordenadas de la ventana de la consola
             return new Rectangle(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top); // Convertir la estructura RECT en un objeto Rectangle
         }
     }
 
-    internal class PiedraPapelYTijeras
+        internal class PiedraPapelYTijeras
     {
         private static readonly string[] opciones = { "Piedra", "Papel", "Tijeras" }; // Opciones del juego
         private static Random random = new Random(); // Generador de números aleatorios
@@ -353,6 +438,7 @@ namespace MINIJUEGOS_ASCII
 
             IntPtr hConsole = GetStdHandle(-11); // Obtener el manejador de la consola de salida estándar
             CONSOLE_FONT_INFO consoleFontInfo;
+
             if (!GetCurrentConsoleFont(hConsole, false, out consoleFontInfo)) // Obtener información de la fuente de la consola
             {
                 Console.WriteLine("Error al obtener la información de la fuente de la consola.");
