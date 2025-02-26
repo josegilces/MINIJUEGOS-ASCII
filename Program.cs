@@ -1,10 +1,14 @@
-﻿using System;
+﻿using System; // Importa el espacio de nombres System para utilizar las funcionalidades básicas de C#
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using System.Threading;
+using System.Threading.Tasks; // Importa el espacio de nombres System.Threading.Tasks, que proporciona tipos y métodos para manejar operaciones asíncronas y paralelas
+using NAudio.Wave; // Importa el espacio de nombres NAudio.Wave para manejar operaciones de audio
+using System.Diagnostics; 
 
 /*PROYECTO FINAL - V1.0.2
          * Registro de versiones y actualizaciones
@@ -12,7 +16,6 @@ using System.Windows.Forms;
          * Versión: 1.0.2
          * Fecha: 2/2/2025
          * Hora: 20:56
-         * Autor: J
          * 
          * He diseñado e implementado el primer escenario para el juego "laberinto" con temática espacial.
          * Además se han modificado y añadido métodos que funcionan acorde al nuevo escenario.
@@ -33,7 +36,6 @@ using System.Windows.Forms;
          * Versión: 1.0.1
          * Fecha: 26/1/2025
          * Hora: 15:49
-         * Autor: J
          * 
          * He modularizado el código y corregido un error en el método ActualizarEscenario.
          * Las clases, miembros, variables (no auxiliares), arreglos, métodos y objetos creados fueron:
@@ -47,7 +49,6 @@ using System.Windows.Forms;
          * Versión: 1.0.0
          * Fecha: 26/1/2025
          * Hora: 10:41
-         * Autor: J
          * 
          * He programado lo básico para el primer juego "Laberinto" dentro de una clase; se han creado las variables y funciones fundamentales para el escenario y el movimiento del personaje.
          * Las clases, miembros, variables (no auxiliares), arreglos, métodos y objetos creados fueron:
@@ -95,7 +96,7 @@ namespace MINIJUEGOS_ASCII
             switch (Opcion)
             {
                 case "1":
-                    Laberinto.Menu();
+                    Laberinto.MenuPrincipal();
                     break;
                 case "2":
                     PiedraPapelYTijeras.Iniciar();
@@ -133,6 +134,9 @@ namespace MINIJUEGOS_ASCII
         public static CONSOLE_FONT_INFO consoleFontInfo;
         public static Rectangle consoleWindow; // Nos servirá después para obtener el rectángulo de la ventana de la consola
 
+        //MIEMBROS NECESARIOS PARA LA FUNCIONALIDAD DE MÚSICA
+        private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
         // Escenarios
         public static string[,] Zvezda = new string[100, 35]; // Conecta directamente con "Zarya"
         public static string[,] Zarya = new string[100, 35];
@@ -165,10 +169,24 @@ namespace MINIJUEGOS_ASCII
 
             consoleWindow = GetConsoleWindowRectangle(); // Obtener el rectángulo de la ventana de la consola
         }
-        public static void CargarMenu() // Carga e imprime el menú del minijuego
+        public static void CargarMenus(string ruta) // Carga e imprime un menú del minijuego indicado en su parámetro de entrada
         {
+            Console.Clear();
+            
+
+            // Obtener la ruta base del ejecutable
+            string basePath = AppDomain.CurrentDomain.BaseDirectory;
+            // Combinar la ruta base con la ruta relativa del archivo
+            string filePath = Path.Combine(basePath, ruta); // Ruta del archivo de texto, el cual contiene el menú con gráficos ASCII
+
+            // Verificar si el archivo existe
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"Error: No se encontró el archivo en la ruta: {filePath}");
+                return;
+            }
+
             // Cargar en memoria el menú gráfico
-            string filePath = "MenuInicio.txt"; // Ruta del archivo de texto, el cual contiene el menú con gráficos ASCII
             string[] lines = File.ReadAllLines(filePath); // Leer todas las líneas del archivo
             string[,] escenario = new string[100, 35];
 
@@ -191,12 +209,60 @@ namespace MINIJUEGOS_ASCII
                 }
             }
         }
-        public static void Menu() // Punto de llamada de las funcionalidades para el menú del minijuego
-        {
-            PrepararAmbienteConsola();
-            CargarMenu();
 
-            string[] opciones = { "Iniciar", "Salir" }; // Opciones del menú
+        public static void Musica(CancellationToken token) // Carga y reproduce la música
+        {
+            try
+            {
+                while (!token.IsCancellationRequested) // // Bucle infinito para la reproducción continua, se detiene si se solicita la cancelación
+                {
+                    // Utiliza un bloque using para asegurar que los recursos se liberen correctamente después de usarlos
+                    using (var audioFile = new AudioFileReader("assets/Sounds/Interstellar.mp3")) // Crea un objeto AudioFileReader para leer el archivo de audio especificado
+                    using (var outputDevice = new WaveOutEvent()) // Crea un dispositivo de salida de audio para reproducir el archivo de audio
+                    {
+                        outputDevice.Init(audioFile); // Inicializa el dispositivo de salida con el archivo de audio
+                        outputDevice.Play(); // Comienza a reproducir el archivo de audio
+
+                        //Console.ReadKey(); // Espera a que el usuario presione una tecla para detener la reproducción y terminar el programa
+
+                        while (outputDevice.PlaybackState == PlaybackState.Playing && !token.IsCancellationRequested)
+                        {
+                            if (token.IsCancellationRequested)
+                            {
+                                outputDevice.Stop(); // Detiene la reproducción si se solicita la cancelación
+                                outputDevice.Dispose(); // Liberar recursos
+                                break; // Sal del bucle externo también
+                            }
+                            Task.Delay(100).Wait(); // Mantiene el bucle mientras la música se esté reproduciendo
+                        }
+
+                        
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en la reproducción de música: {ex.Message}");
+                throw;
+            }
+            
+        }
+        public static void MenuPrincipal() // Punto de llamada de las funcionalidades para el menú del minijuego
+        {
+            Debug.WriteLine("Método MenuPrincipal: OK");
+            PrepararAmbienteConsola();
+            CargarMenus("assets/Menus/MenuPrincipal.txt");
+
+            // Reiniciar el CancellationTokenSource si ya fue cancelado
+            if (cancellationTokenSource.IsCancellationRequested)
+            {
+                cancellationTokenSource.Dispose(); // Liberar recursos del antiguo
+                cancellationTokenSource = new CancellationTokenSource(); // Crear uno nuevo
+            }
+
+
+            // Iniciar la tarea de música con el CancellationToken
+            var musicaTask = Task.Run(() => Musica(cancellationTokenSource.Token)); // Usa Task para ejecutar la música en segundo plano
 
             while (true) // Bluce encargado de mantener ejecutando las funcionalidades para el menú hasta que se elija una de las dos opciones
             {
@@ -219,7 +285,7 @@ namespace MINIJUEGOS_ASCII
                     if (posicionConsola.X >= 55 && posicionConsola.X <= 79 && posicionConsola.Y >= 20 && posicionConsola.Y <= 24)
                     {
                         SendKeys.SendWait("{ESCAPE}"); // Simular la pulsación de la tecla Escape para no interrumpir la ejecución del programa 
-                        Iniciar(); // Inicia el juego
+                        MenuInstrucciones(); // Inicia el Menu de Instrucciones
                         break;
                     }
 
@@ -228,7 +294,44 @@ namespace MINIJUEGOS_ASCII
                     {
                         SendKeys.SendWait("{ESCAPE}");
                         string[] args = { }; // Crear un argumento vacío para args
+                        
+
+                        // Detener la música al salir
+                        cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
+                        musicaTask.Wait(); // Espera a que la tarea de música termine
                         Menú.Main(args);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public static void MenuInstrucciones() // Punto de llamada de las funcionalidades para el menú del minijuego
+        {
+            CargarMenus("assets/Menus/MenuInstrucciones.txt");
+
+            while (true) // Bluce encargado de mantener ejecutando las funcionalidades para el menú hasta que se elija una de las dos opciones
+            {
+                Point posicionCursor = Cursor.Position; // Obtener la posición actual del cursor del ratón
+                int consoleLeft = consoleWindow.Left + 8; // Ajuste por borde izquierdo
+                int consoleTop = consoleWindow.Top + 30; // Ajuste por borde superior
+
+                // Convertir coordenadas de pantalla a coordenadas de la consola
+                Point posicionConsola = new Point(
+                    (posicionCursor.X - consoleLeft) / consoleFontInfo.dwFontSize.X,
+                    (posicionCursor.Y - consoleTop) / consoleFontInfo.dwFontSize.Y
+                );
+
+                //Console.SetCursorPosition(0, 0);
+
+                // Verificar si se presionó el botón izquierdo del mouse
+                if (Control.MouseButtons == MouseButtons.Left)
+                {
+                    // Coordenadas del "botón" Jugar
+                    if (posicionConsola.X >= 77 && posicionConsola.X <= 93 && posicionConsola.Y >= 28 && posicionConsola.Y <= 32)
+                    {
+                        SendKeys.SendWait("{ESCAPE}"); // Simular la pulsación de la tecla Escape para no interrumpir la ejecución del programa 
+                        Iniciar(); // Inicia el juego
                         break;
                     }
                 }
@@ -236,18 +339,18 @@ namespace MINIJUEGOS_ASCII
         }
         public static void Iniciar() // Método que "arranca" nuestro minijuego
         {
-            // Ajustes previos para una mejor estética visual
+            // Ajustes previos en la consola
             Console.Clear();
             Console.SetCursorPosition(0, 0);
-            Console.CursorVisible = false; // Ocultamos el cursor para que no moleste
+            Console.CursorVisible = false; // Ocultamos el cursor de la consola
 
             // Carga en memoria los mapas para el minijuego
 
-            PrepararEscenario("Zvezda.txt", Zvezda); // Ejecutamos el método PrepararEscenario para cargar nuestro "escenario" en los arreglos
-            PrepararEscenario("Zarya.txt", Zarya);
-            PrepararEscenario("MLM.txt", MLM);
+            PrepararEscenario("assets/Mapas/Zvezda.txt", Zvezda); // Ejecuta el método PrepararEscenario para cargar los escenarios en los arreglos
+            PrepararEscenario("assets/Mapas/Zarya.txt", Zarya);
+            PrepararEscenario("assets/Mapas/MLM.txt", MLM);
 
-            PintarEscenario(Zvezda, 49, 27); // Imprimimos por primera vez nuestro primer escenario "Zvezda"
+            PintarEscenario(Zvezda, 50, 28); // Imprimimos por primera vez nuestro primer escenario Zvezda
 
             while (true) // Bluce encargado de mantener ejecutando el minijuego
             {
@@ -259,7 +362,7 @@ namespace MINIJUEGOS_ASCII
                     }
                     if (EscenarioActual == "Zarya")
                     {
-                        Movimiento(Zvezda);
+                        Movimiento(Zarya);
                     }
                 }
             }
@@ -280,7 +383,7 @@ namespace MINIJUEGOS_ASCII
         }
         public static void PintarEscenario(string[,] escenario, int NuevaCoordXPersonaje, int NuevaCoordYPersonaje) // Imprime el escenario que recibe como parámetro de entrada y también modifica la posición del jugador
         {
-            CoordPersonaje[0] = NuevaCoordXPersonaje; CoordPersonaje[1] = NuevaCoordYPersonaje; //Establece la posición de nuestro personaje
+            CoordPersonaje[0] = NuevaCoordXPersonaje-1; CoordPersonaje[1] = NuevaCoordYPersonaje-1; // Establece la posición de nuestro personaje y se le resta -1 porque las coords comienzan desde (0,0)
 
             Console.Clear();
 
@@ -292,34 +395,31 @@ namespace MINIJUEGOS_ASCII
                     Console.Write(escenario[x, y]);
                 }
             }
-            Console.SetCursorPosition(NuevaCoordXPersonaje, NuevaCoordYPersonaje);
+            Console.SetCursorPosition(CoordPersonaje[0], CoordPersonaje[1]);
             Console.Write("P");
-
-
         }
-        public static void Movimiento(string[,] escenario)
+        public static void Movimiento(string[,] escenario) // Desplaza el personaje por el mapa, pero solo después de verificar que es posible
         {
             BotonPresionado = Console.ReadKey(true); // true evita que se muestre la tecla presionada
 
-            int xAnterior = CoordPersonaje[0];
-            int yAnterior = CoordPersonaje[1]; //Guarda la posición actual antes de moverse
+            int ActualCoordXPersonaje = CoordPersonaje[0];
+            int ActualCoordYPersonaje = CoordPersonaje[1]; // Guarda la posición (x,y) actual antes de moverse
 
-            if (BotonPresionado.Key == ConsoleKey.DownArrow && yAnterior < 34 && EsPosicionValida(escenario, new int[] { xAnterior, yAnterior + 1 }))
+            if (BotonPresionado.Key == ConsoleKey.DownArrow && ActualCoordYPersonaje < 34 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje + 1 }))
             {
-                if (!SiguenteEscenario(escenario, new int[] { xAnterior, yAnterior + 1 }))
+                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje + 1 }))
                 {
                     CoordPersonaje[1]++;
                 }
                 else
                 {
-                    PintarEscenario(Zarya, 50, 30);
+                    PintarEscenario(Zarya, 50, 34);
                     EscenarioActual = "Zarya";
                 }
-
             }
-            else if (BotonPresionado.Key == ConsoleKey.UpArrow && yAnterior > 0 && EsPosicionValida(escenario, new int[] { xAnterior, yAnterior - 1 }))
+            else if (BotonPresionado.Key == ConsoleKey.UpArrow && ActualCoordYPersonaje > 0 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje - 1 }))
             {
-                if (!SiguenteEscenario(escenario, new int[] { xAnterior, yAnterior - 1 }))
+                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje - 1 }))
                 {
                     CoordPersonaje[1]--;
                 }
@@ -329,45 +429,67 @@ namespace MINIJUEGOS_ASCII
                     EscenarioActual = "Zarya";
                 }
             }
-            else if (BotonPresionado.Key == ConsoleKey.LeftArrow && xAnterior > 0 && EsPosicionValida(escenario, new int[] { xAnterior - 1, yAnterior }))
+            else if (BotonPresionado.Key == ConsoleKey.LeftArrow && ActualCoordXPersonaje > 0 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje - 1, ActualCoordYPersonaje }))
             {
-                CoordPersonaje[0]--;
+                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje - 1, ActualCoordYPersonaje}))
+                {
+                    CoordPersonaje[0]--;
+                }
+                else
+                {
+                    PintarEscenario(Zarya, 50, 34);
+                    EscenarioActual = "Zarya";
+                }
             }
-            else if (BotonPresionado.Key == ConsoleKey.RightArrow && xAnterior < 99 && EsPosicionValida(escenario, new int[] { xAnterior + 1, yAnterior }))
+            else if (BotonPresionado.Key == ConsoleKey.RightArrow && ActualCoordXPersonaje < 99 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje + 1, ActualCoordYPersonaje }))
             {
-                CoordPersonaje[0]++;
+                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje + 1, ActualCoordYPersonaje }))
+                {
+                    CoordPersonaje[0]++;
+                }
+                else
+                {
+                    PintarEscenario(Zarya, 50, 34);
+                    EscenarioActual = "Zarya";
+                }
             }
 
-            ActualizarEscenario(escenario, xAnterior, yAnterior); //Enviamos la posición anterior para que se restaure bien
+            ActualizarEscenario(escenario, ActualCoordXPersonaje, ActualCoordYPersonaje); // Enviamos la posición anterior para que se restaure bien
         }
-
-        public static void ActualizarEscenario(string[,] escenario, int xAnterior, int yAnterior)
+        public static bool EsPosicionValida(string[,] escenario, int[] coordenadas) // Retorna un true si la celda a desplazarse no tiene colisión
         {
-            // Restaurar la celda en la posición anterior
-            Console.SetCursorPosition(xAnterior, yAnterior);
-            Console.Write(escenario[xAnterior, yAnterior]); // Escribimos lo que había en la celda antes de que el personaje estuviera allí
+            string celda = escenario[coordenadas[0], coordenadas[1]];
+            return celda != "#" && celda != "║" && celda != "(" && celda != ")" && celda != " ";
+        }
+        public static string SiguenteEscenario(string[,] escenario, int[] coordenadas) // Retorna un true si la celda a desplazarse tiene una "escotilla"
+        {
+            string celda = escenario[coordenadas[0], coordenadas[1]];
+            string decision = "";
+
+            if (celda == "S")
+            {
+                decision = "S";
+            }
+            if (celda == "A")
+            {
+                
+            }
+            return 
+        }
+        public static void ActualizarEscenario(string[,] escenario, int AnteriorCoordXPersonaje, int AnteriorCoordYPersonaje) // Vuelve a imprimir la celda en la que estaba el personaje e imprime el personaje en su nueva posición
+        {
+            Console.SetCursorPosition(AnteriorCoordXPersonaje, AnteriorCoordYPersonaje);
+            Console.Write(escenario[AnteriorCoordXPersonaje, AnteriorCoordYPersonaje]); // Imprime lo que había en la celda antes de que el personaje estuviera allí
 
             // Dibujar el personaje en la nueva posición
             Console.SetCursorPosition(CoordPersonaje[0], CoordPersonaje[1]);
             Console.Write("P");
-        }
-
-        public static bool EsPosicionValida(string[,] escenario, int[] coordenadas)
-        {
-            string celda = escenario[coordenadas[0], coordenadas[1]];
-            return celda != "#" && celda != "║" && celda != "(" && celda != ")";
-        }
-        public static bool SiguenteEscenario(string[,] escenario, int[] coordenadas)
-        {
-            string celda = escenario[coordenadas[0], coordenadas[1]];
-            return celda == "S";
         }
         public static bool Ascensor(string[,] escenario, int[] coordenadas)
         {
             string celda = escenario[coordenadas[0], coordenadas[1]];
             return celda == "A" || celda == "S";
         }
-
         private static void MaximizarVentana()
         {
             IntPtr identificadorConsola = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola
@@ -422,7 +544,7 @@ namespace MINIJUEGOS_ASCII
         }
     }
 
-        internal class PiedraPapelYTijeras
+    internal class PiedraPapelYTijeras
     {
         private static readonly string[] opciones = { "Piedra", "Papel", "Tijeras" }; // Opciones del juego
         private static Random random = new Random(); // Generador de números aleatorios
@@ -430,58 +552,45 @@ namespace MINIJUEGOS_ASCII
         public static void Iniciar()
         {
             MaximizarVentana(); // Maximizar la ventana de la consola
+            MostrarInstrucciones(); // Mostrar instrucciones del juego
             Console.Clear(); // Limpiar la pantalla de la consola
-            Console.CursorVisible = false; // Ocultar el cursor de la consola
-
-            Application.EnableVisualStyles(); // Habilitar estilos visuales para Windows Forms
-            Application.SetCompatibleTextRenderingDefault(false); // Configurar renderizado de texto compatible
-
-            IntPtr hConsole = GetStdHandle(-11); // Obtener el manejador de la consola de salida estándar
-            CONSOLE_FONT_INFO consoleFontInfo;
-
-            if (!GetCurrentConsoleFont(hConsole, false, out consoleFontInfo)) // Obtener información de la fuente de la consola
-            {
-                Console.WriteLine("Error al obtener la información de la fuente de la consola.");
-                return;
-            }
-
-            if (consoleFontInfo.dwFontSize.X <= 0 || consoleFontInfo.dwFontSize.Y <= 0) // Validar que los valores sean correctos
-            {
-                consoleFontInfo.dwFontSize = new Point(8, 16); // Asignar valores predeterminados comunes
-            }
-
-            Rectangle consoleWindow = GetConsoleWindowRectangle(); // Obtener el rectángulo de la ventana de la consola
 
             while (true)
             {
-                Point posicionCursor = Cursor.Position; // Obtener la posición actual del cursor del ratón
-                int consoleLeft = consoleWindow.Left + 8; // Ajuste por borde izquierdo
-                int consoleTop = consoleWindow.Top + 30; // Ajuste por borde superior
-
-                // Convertir coordenadas de pantalla a coordenadas de la consola
-                Point posicionConsola = new Point(
-                    (posicionCursor.X - consoleLeft) / consoleFontInfo.dwFontSize.X,
-                    (posicionCursor.Y - consoleTop) / consoleFontInfo.dwFontSize.Y
-                );
-
-                Console.SetCursorPosition(0, 0);
-                Console.WriteLine("Seleccione una opción pasando el cursor sobre ella:");
-
-                // Dibujar opciones en consola con sus representaciones en ASCII
+                // Mostrar las opciones numeradas
+                Console.Clear();
+                Console.WriteLine("Seleccione una opción con el número correspondiente:");
                 for (int i = 0; i < opciones.Length; i++)
                 {
                     Console.SetCursorPosition(10, 5 + i * 5);
-                    Console.WriteLine(opciones[i]);
+                    Console.WriteLine($"{i + 1}. {opciones[i]}");
                     DibujarOpcion(opciones[i], 10, 6 + i * 5);
                 }
 
-                for (int i = 0; i < opciones.Length; i++)
+                // Leer la opción del usuario
+                int eleccionUsuario;
+                if (int.TryParse(Console.ReadLine(), out eleccionUsuario) && eleccionUsuario >= 1 && eleccionUsuario <= 3)
                 {
-                    if (posicionConsola.X >= 10 && posicionConsola.X <= 20 && posicionConsola.Y == 5 + i * 5)
-                    {
-                        Jugar(opciones[i]);
-                        return;
-                    }
+                    Jugar(opciones[eleccionUsuario - 1]); // Jugar con la opción seleccionada
+                }
+                else
+                {
+                    Console.WriteLine("INGRESAR UNA OPCION CORRECTA.");
+                    Console.ReadKey(); // Pausar antes de continuar el bucle
+                    continue; // Volver al principio del ciclo si la opción es inválida
+                }
+
+                // Preguntar al usuario si desea jugar nuevamente o salir
+                Console.Clear();
+                Console.WriteLine("DESEAS SEGUIR");
+                Console.WriteLine("1. Sí");
+                Console.WriteLine("2. No");
+                string respuesta = Console.ReadLine();
+
+                if (respuesta == "2")
+                {
+                    Console.WriteLine("GRACIAS");
+                    break; // Salir del bucle y terminar el juego
                 }
             }
         }
@@ -510,43 +619,70 @@ namespace MINIJUEGOS_ASCII
                 Console.WriteLine("Perdiste. Inténtalo de nuevo.");
             }
 
-            Console.WriteLine("Presiona cualquier tecla para salir...");
+            Console.WriteLine("Presiona cualquier tecla para continuar...");
             Console.ReadKey();
         }
 
         private static void DibujarOpcion(string opcion, int x, int y)
         {
             Console.SetCursorPosition(x, y);
+
+
             switch (opcion)
             {
                 case "Piedra":
-                    Console.WriteLine("   ███   ");
+                    Console.ForegroundColor = ConsoleColor.Gray;
+                    Console.BackgroundColor = ConsoleColor.DarkGray;
+                    Console.WriteLine("     █████     ");
                     Console.SetCursorPosition(x, y + 1);
-                    Console.WriteLine(" ███████ ");
+                    Console.WriteLine("    ███████    ");
                     Console.SetCursorPosition(x, y + 2);
-                    Console.WriteLine(" ███████ ");
+                    Console.WriteLine("    ███████    ");
                     Console.SetCursorPosition(x, y + 3);
-                    Console.WriteLine("   ███   ");
+                    Console.WriteLine("     █████     ");
                     break;
+
                 case "Papel":
-                    Console.WriteLine(" ███████ ");
+                    Console.ForegroundColor = ConsoleColor.White;
+                    Console.BackgroundColor = ConsoleColor.Black;
+                    Console.WriteLine("   █████████   ");
                     Console.SetCursorPosition(x, y + 1);
-                    Console.WriteLine(" ███████ ");
+                    Console.WriteLine("   █████████   ");
                     Console.SetCursorPosition(x, y + 2);
-                    Console.WriteLine(" ███████ ");
+                    Console.WriteLine("   █████████   ");
                     Console.SetCursorPosition(x, y + 3);
-                    Console.WriteLine(" ███████ ");
+                    Console.WriteLine("   █████████   ");
                     break;
+
                 case "Tijeras":
-                    Console.WriteLine("    █  █  ");
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Console.WriteLine("     █   █     ");
                     Console.SetCursorPosition(x, y + 1);
-                    Console.WriteLine("     ███  ");
+                    Console.WriteLine("     ████      ");
                     Console.SetCursorPosition(x, y + 2);
-                    Console.WriteLine("      █   ");
+                    Console.WriteLine("      █        ");
                     Console.SetCursorPosition(x, y + 3);
-                    Console.WriteLine(" ██████  ");
+                    Console.WriteLine("     ██████    ");
                     break;
             }
+
+            // Restaurar colores a los predeterminados después de dibujar
+            Console.ResetColor();
+        }
+
+        private static void MostrarInstrucciones()
+        {
+            Console.WriteLine("Instrucciones:");
+            Console.WriteLine("1. Elige una opción entre Piedra, Papel o Tijeras.");
+            Console.WriteLine("2. Usa el número correspondiente para seleccionar la opción.");
+            Console.WriteLine("3. Piedra vence a Tijeras.");
+            Console.WriteLine("4. Tijeras vencen a Papel.");
+            Console.WriteLine("5. Papel vence a Piedra.");
+            Console.WriteLine("6. Si ambos eligen la misma opción, es un empate.");
+            Console.WriteLine("Presiona cualquier tecla para continuar...");
+
+            Console.ReadKey();
         }
 
         private static void MaximizarVentana()
@@ -602,10 +738,8 @@ namespace MINIJUEGOS_ASCII
     {
         public static void Iniciar()
         {
-            Console.Clear(); // Limpiar la pantalla
-            Console.SetCursorPosition(0, 0); // Asegurar que el cursor esté en la posición inicial
+            Console.Clear();
 
-            // Lista de palabras y sus pistas
             Dictionary<string, string> palabras = new Dictionary<string, string>
         {
             { "compilador", "Traduce código fuente a código máquina." },
@@ -623,61 +757,100 @@ namespace MINIJUEGOS_ASCII
             { "clase", "Plantilla para crear objetos en POO." }
         };
 
-            Random aleatorio = new Random(); // Generador de números aleatorios
-                                             // Seleccionar una palabra aleatoria del diccionario
-            KeyValuePair<string, string> palabraSeleccionada = palabras.ElementAt(aleatorio.Next(palabras.Count));
-            string palabraSecreta = palabraSeleccionada.Key; // La palabra a adivinar
-            string pista = palabraSeleccionada.Value; // La pista de la palabra
-            char[] palabraAdivinada = new string('_', palabraSecreta.Length).ToCharArray(); // Representación oculta de la palabra
-            HashSet<char> letrasIncorrectas = new HashSet<char>(); // Conjunto de letras erróneas ingresadas
-            int intentosRestantes = 7; // Número de intentos disponibles
+            Random aleatorio = new Random();
+            var palabraSeleccionada = palabras.ElementAt(aleatorio.Next(palabras.Count));
+            string palabraSecreta = palabraSeleccionada.Key;
+            string pista = palabraSeleccionada.Value;
+            char[] palabraAdivinada = new string('_', palabraSecreta.Length).ToCharArray();
+            HashSet<char> letrasIncorrectas = new HashSet<char>();
+            int usosDeAyuda = 0;
+            int intentosRestantes = 7;
 
-            // Bucle del juego
             while (intentosRestantes > 0 && new string(palabraAdivinada) != palabraSecreta)
             {
                 Console.Clear();
-                DibujarAhorcado(7 - intentosRestantes); // Dibujar el estado actual del ahorcado
-                Console.WriteLine("Pista: " + pista);
-                Console.WriteLine("Palabra: " + new string(palabraAdivinada));
-                Console.WriteLine("Letras incorrectas: " + string.Join(", ", letrasIncorrectas));
-                Console.Write("Ingresa una letra: ");
-                char intento = Console.ReadKey().KeyChar; // Leer la letra ingresada por el usuario
+                DibujarAhorcado(7 - intentosRestantes);
+                Console.WriteLine($"Pista: {pista}");
+                Console.WriteLine($"Palabra: {new string(palabraAdivinada)}");
+                Console.WriteLine($"Letras incorrectas: {string.Join(", ", letrasIncorrectas)}");
+                Console.WriteLine($"\nEscribe una letra o 'ayuda' para revelar una letra (máx. 2 veces).");
+                Console.Write("Ingresa una opción: ");
 
-                // Verificar si la letra está en la palabra secreta
+                string entrada = Console.ReadLine()?.Trim().ToLower();
+
+                if (entrada == "ayuda")
+                {
+                    int letrasFaltantes = palabraAdivinada.Count(c => c == '_');
+
+                    if (usosDeAyuda < 2 && intentosRestantes > 1 && letrasFaltantes > 1)
+                    {
+                        RevelarLetra(palabraSecreta, palabraAdivinada);
+                        intentosRestantes--;
+                        usosDeAyuda++;
+
+
+                        if (new string(palabraAdivinada) == palabraSecreta)
+                            break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("No puedes pedir más ayuda.");
+                        Console.ReadKey();
+                    }
+                    continue;
+                }
+
+                if (entrada.Length != 1 || !char.IsLetter(entrada[0]))
+                {
+                    Console.WriteLine("Entrada inválida. Ingresa solo una letra.");
+                    Console.ReadKey();
+                    continue;
+                }
+
+                char intento = entrada[0];
+
                 if (palabraSecreta.Contains(intento))
                 {
                     for (int i = 0; i < palabraSecreta.Length; i++)
                     {
                         if (palabraSecreta[i] == intento)
                         {
-                            palabraAdivinada[i] = intento; // Reemplazar el guion bajo con la letra adivinada
+                            palabraAdivinada[i] = intento;
                         }
                     }
                 }
-                else
+                else if (!letrasIncorrectas.Contains(intento))
                 {
-                    letrasIncorrectas.Add(intento); // Agregar la letra al conjunto de errores
-                    intentosRestantes--; // Reducir el número de intentos
+                    letrasIncorrectas.Add(intento);
+                    intentosRestantes--;
                 }
             }
 
+
+
             Console.Clear();
             DibujarAhorcado(7 - intentosRestantes);
-            // Verificar si el usuario ha ganado o perdido
+
             if (new string(palabraAdivinada) == palabraSecreta)
             {
-                Console.WriteLine("\n¡Felicidades! Has adivinado la palabra: " + palabraSecreta);
+                Console.WriteLine($"\n¡Felicidades! Has encontrado la palabra: {palabraSecreta}");
             }
             else
             {
-                Console.WriteLine("\nPerdiste. La palabra era: " + palabraSecreta);
+                Console.WriteLine($"\nPerdiste. La palabra era: {palabraSecreta}");
+
+                Console.Beep(400, 500);
+                Console.Beep(300, 500);
+                Console.Beep(200, 800);
             }
+
+            Console.WriteLine("\nPresiona cualquier tecla para salir...");
+            Console.ReadKey();
         }
 
         static void DibujarAhorcado(int errores)
         {
-            // Representación gráfica del ahorcado en distintas etapas
-            string[] dibujo = new string[]
+            string[] dibujo =
             {
             "  +---+",
             "  |   |",
@@ -686,50 +859,44 @@ namespace MINIJUEGOS_ASCII
             "      |",
             "      |",
             "========="
-            };
+        };
 
-            // Modificar el dibujo según la cantidad de errores
             switch (errores)
             {
-                case 1:
-                    dibujo[2] = "  O   |";
-                    break;
-                case 2:
-                    dibujo[2] = "  O   |";
-                    dibujo[3] = "  |   |";
-                    break;
-                case 3:
-                    dibujo[2] = "  O   |";
-                    dibujo[3] = " /|   |";
-                    break;
-                case 4:
-                    dibujo[2] = "  O   |";
-                    dibujo[3] = " /|\\  |";
-                    break;
-                case 5:
-                    dibujo[2] = "  O   |";
-                    dibujo[3] = " /|\\  |";
-                    dibujo[4] = " /    |";
-                    break;
-                case 6:
-                    dibujo[2] = "  O   |";
-                    dibujo[3] = " /|\\  |";
-                    dibujo[4] = " / \\  |";
-                    break;
-                case 7:
-                    dibujo[2] = "  O   |";
-                    dibujo[3] = " /|\\  |";
-                    dibujo[4] = " / \\  |";
-                    dibujo[5] = "¡AHORCADO!";
-                    break;
+                case 1: dibujo[2] = "  O   |"; break;
+                case 2: dibujo[2] = "  O   |"; dibujo[3] = "  |   |"; break;
+                case 3: dibujo[2] = "  O   |"; dibujo[3] = " /|   |"; break;
+                case 4: dibujo[2] = "  O   |"; dibujo[3] = " /|\\  |"; break;
+                case 5: dibujo[2] = "  O   |"; dibujo[3] = " /|\\  |"; dibujo[4] = " /    |"; break;
+                case 6: dibujo[2] = "  O   |"; dibujo[3] = " /|\\  |"; dibujo[4] = " / \\  |"; break;
+                case 7: dibujo[2] = "  X   |"; dibujo[3] = " /|\\  |"; dibujo[4] = " / \\  |"; dibujo[5] = "¡AHORCADO!"; break;
             }
 
-            // Imprimir el dibujo del ahorcado
             foreach (var linea in dibujo)
             {
                 Console.WriteLine(linea);
             }
         }
+        static void RevelarLetra(string palabraSecreta, char[] palabraAdivinada)
+        {
+            Random rand = new Random();
+            List<int> posicionesOcultas = new List<int>();
+
+            for (int i = 0; i < palabraSecreta.Length; i++)
+            {
+                if (palabraAdivinada[i] == '_')
+                {
+                    posicionesOcultas.Add(i);
+                }
+            }
+
+            if (posicionesOcultas.Count > 0)
+            {
+                int indice = posicionesOcultas[rand.Next(posicionesOcultas.Count)];
+                palabraAdivinada[indice] = palabraSecreta[indice];
+            }
+        }
+
     }
 
 }
