@@ -136,7 +136,7 @@
     <Content Include="bin\Debug\assets\Mapas\escenario2.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="bin\Debug\assets\Mapas\MLM.txt">
+    <Content Include="bin\Debug\assets\Mapas\Nauka.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="bin\Debug\assets\Mapas\Zarya.txt">

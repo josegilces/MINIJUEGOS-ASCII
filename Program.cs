@@ -1,14 +1,14 @@
-﻿using System; // Importa el espacio de nombres System para utilizar las funcionalidades básicas de C#
+﻿using NAudio.Wave; // Importa el espacio de nombres NAudio.Wave para manejar operaciones de audio
+using System; // Importa el espacio de nombres System para utilizar las funcionalidades básicas de C#
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Windows.Forms;
 using System.Threading;
 using System.Threading.Tasks; // Importa el espacio de nombres System.Threading.Tasks, que proporciona tipos y métodos para manejar operaciones asíncronas y paralelas
-using NAudio.Wave; // Importa el espacio de nombres NAudio.Wave para manejar operaciones de audio
-using System.Diagnostics; 
+using System.Windows.Forms;
 
 /*PROYECTO FINAL - V1.0.2
          * Registro de versiones y actualizaciones
@@ -78,7 +78,7 @@ namespace MINIJUEGOS_ASCII
             // Limpia y restablece ajustes de la consola, antes de iniciar el Menú principal, ya que se podrá regresar aquí desde cualquier minijuego
             Console.Clear();
             Console.CursorVisible = true;
-            Console.SetCursorPosition(0,0);
+            Console.SetCursorPosition(0, 0);
 
             Console.WriteLine("Menú:");
             Console.WriteLine("1. Laberinto");
@@ -124,13 +124,13 @@ namespace MINIJUEGOS_ASCII
     }
     internal class Laberinto
     {
-        //MIEMBROS FUNDAMENTALES PARA EL JUEGO
+        // MIEMBROS FUNDAMENTALES PARA EL JUEGO
         //                                           X=100 Columnas y Y=35 filas
-        public static int[] CoordPersonaje = new int[2]; //Un arreglo de dos posiciones para guardar las coordenadas X y Y de nuestro personaje
+        public static byte[] CoordPersonaje = new byte[2]; //Un arreglo de dos posiciones para guardar las coordenadas X y Y de nuestro personaje
         public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo(); // Objeto al que se le pueden asignar valores de lo que se teclea
         public static string EscenarioActual = "Zvezda";
 
-        //MIEMBROS NECESARIOS PARA LA FUNCIONALIDAD DE ENTRADA POR RATÓN
+        // MIEMBROS NECESARIOS PARA LA FUNCIONALIDAD DE ENTRADA POR RATÓN
         public static CONSOLE_FONT_INFO consoleFontInfo;
         public static Rectangle consoleWindow; // Nos servirá después para obtener el rectángulo de la ventana de la consola
 
@@ -138,9 +138,9 @@ namespace MINIJUEGOS_ASCII
         private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         // Escenarios
-        public static string[,] Zvezda = new string[100, 35]; // Conecta directamente con "Zarya"
-        public static string[,] Zarya = new string[100, 35];
-        public static string[,] MLM = new string[100, 35]; // Conecta mediante ascensor con "Zvezda"
+        public static string[,] Zvezda = new string[100, 35]; // Conecta directamente con Zarya
+        public static string[,] Zarya = new string[100, 35]; // Conecta directamente con Zvezda y por ascensor con Nauka
+        public static string[,] Nauka = new string[100, 35]; // Conecta mediante ascensor con Zarya
 
         public static void PrepararAmbienteConsola() // Forma parte de la funcionalidad de entrada por ratón
         {
@@ -172,7 +172,7 @@ namespace MINIJUEGOS_ASCII
         public static void CargarMenus(string ruta) // Carga e imprime un menú del minijuego indicado en su parámetro de entrada
         {
             Console.Clear();
-            
+
 
             // Obtener la ruta base del ejecutable
             string basePath = AppDomain.CurrentDomain.BaseDirectory;
@@ -233,10 +233,8 @@ namespace MINIJUEGOS_ASCII
                                 outputDevice.Dispose(); // Liberar recursos
                                 break; // Sal del bucle externo también
                             }
-                            Task.Delay(100).Wait(); // Mantiene el bucle mientras la música se esté reproduciendo
+                            Task.Delay(5000).Wait(); // Mantiene el bucle mientras la música se esté reproduciendo
                         }
-
-                        
                     }
                 }
             }
@@ -245,7 +243,7 @@ namespace MINIJUEGOS_ASCII
                 Console.WriteLine($"Error en la reproducción de música: {ex.Message}");
                 throw;
             }
-            
+
         }
         public static void MenuPrincipal() // Punto de llamada de las funcionalidades para el menú del minijuego
         {
@@ -294,7 +292,7 @@ namespace MINIJUEGOS_ASCII
                     {
                         SendKeys.SendWait("{ESCAPE}");
                         string[] args = { }; // Crear un argumento vacío para args
-                        
+
 
                         // Detener la música al salir
                         cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
@@ -348,7 +346,7 @@ namespace MINIJUEGOS_ASCII
 
             PrepararEscenario("assets/Mapas/Zvezda.txt", Zvezda); // Ejecuta el método PrepararEscenario para cargar los escenarios en los arreglos
             PrepararEscenario("assets/Mapas/Zarya.txt", Zarya);
-            PrepararEscenario("assets/Mapas/MLM.txt", MLM);
+            PrepararEscenario("assets/Mapas/Nauka.txt", Nauka);
 
             PintarEscenario(Zvezda, 50, 28); // Imprimimos por primera vez nuestro primer escenario Zvezda
 
@@ -363,6 +361,10 @@ namespace MINIJUEGOS_ASCII
                     if (EscenarioActual == "Zarya")
                     {
                         Movimiento(Zarya);
+                    }
+                    if (EscenarioActual == "Nauka")
+                    {
+                        Movimiento(Nauka);
                     }
                 }
             }
@@ -381,9 +383,10 @@ namespace MINIJUEGOS_ASCII
                 }
             }
         }
-        public static void PintarEscenario(string[,] escenario, int NuevaCoordXPersonaje, int NuevaCoordYPersonaje) // Imprime el escenario que recibe como parámetro de entrada y también modifica la posición del jugador
+        public static void PintarEscenario(string[,] escenario, byte NuevaCoordXPersonaje, byte NuevaCoordYPersonaje) // Imprime el escenario que recibe como parámetro de entrada y también modifica la posición del jugador
         {
-            CoordPersonaje[0] = NuevaCoordXPersonaje-1; CoordPersonaje[1] = NuevaCoordYPersonaje-1; // Establece la posición de nuestro personaje y se le resta -1 porque las coords comienzan desde (0,0)
+            CoordPersonaje[0] = (byte)(NuevaCoordXPersonaje - 1);
+            CoordPersonaje[1] = (byte)(NuevaCoordYPersonaje - 1); // Establece la posición de nuestro personaje y se le resta -1 porque las coords comienzan desde (0,0)
 
             Console.Clear();
 
@@ -396,62 +399,50 @@ namespace MINIJUEGOS_ASCII
                 }
             }
             Console.SetCursorPosition(CoordPersonaje[0], CoordPersonaje[1]);
-            Console.Write("P");
+            Console.Write("O");
         }
         public static void Movimiento(string[,] escenario) // Desplaza el personaje por el mapa, pero solo después de verificar que es posible
         {
             BotonPresionado = Console.ReadKey(true); // true evita que se muestre la tecla presionada
 
-            int ActualCoordXPersonaje = CoordPersonaje[0];
-            int ActualCoordYPersonaje = CoordPersonaje[1]; // Guarda la posición (x,y) actual antes de moverse
+            byte ActualCoordXPersonaje = CoordPersonaje[0];
+            byte ActualCoordYPersonaje = CoordPersonaje[1]; // Guarda la posición (x,y) actual antes de moverse
 
             if (BotonPresionado.Key == ConsoleKey.DownArrow && ActualCoordYPersonaje < 34 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje + 1 }))
             {
-                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje + 1 }))
+                if (!EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje}))
                 {
                     CoordPersonaje[1]++;
-                }
-                else
-                {
-                    PintarEscenario(Zarya, 50, 34);
-                    EscenarioActual = "Zarya";
                 }
             }
             else if (BotonPresionado.Key == ConsoleKey.UpArrow && ActualCoordYPersonaje > 0 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje - 1 }))
             {
-                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje - 1 }))
+                if (!EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje}))
                 {
                     CoordPersonaje[1]--;
-                }
-                else
-                {
-                    PintarEscenario(Zarya, 50, 34);
-                    EscenarioActual = "Zarya";
                 }
             }
             else if (BotonPresionado.Key == ConsoleKey.LeftArrow && ActualCoordXPersonaje > 0 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje - 1, ActualCoordYPersonaje }))
             {
-                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje - 1, ActualCoordYPersonaje}))
+                if (!EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje}))
                 {
                     CoordPersonaje[0]--;
-                }
-                else
-                {
-                    PintarEscenario(Zarya, 50, 34);
-                    EscenarioActual = "Zarya";
                 }
             }
             else if (BotonPresionado.Key == ConsoleKey.RightArrow && ActualCoordXPersonaje < 99 && EsPosicionValida(escenario, new int[] { ActualCoordXPersonaje + 1, ActualCoordYPersonaje }))
             {
-                if (!SiguenteEscenario(escenario, new int[] { ActualCoordXPersonaje + 1, ActualCoordYPersonaje }))
+                if (!EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje}))
                 {
                     CoordPersonaje[0]++;
                 }
-                else
-                {
-                    PintarEscenario(Zarya, 50, 34);
-                    EscenarioActual = "Zarya";
-                }
+            }
+            else if (BotonPresionado.Key == ConsoleKey.W)
+            {
+                EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje});
+            }
+            else if (BotonPresionado.Key == ConsoleKey.S)
+            {
+                EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje });
             }
 
             ActualizarEscenario(escenario, ActualCoordXPersonaje, ActualCoordYPersonaje); // Enviamos la posición anterior para que se restaure bien
@@ -461,20 +452,45 @@ namespace MINIJUEGOS_ASCII
             string celda = escenario[coordenadas[0], coordenadas[1]];
             return celda != "#" && celda != "║" && celda != "(" && celda != ")" && celda != " ";
         }
-        public static string SiguenteEscenario(string[,] escenario, int[] coordenadas) // Retorna un true si la celda a desplazarse tiene una "escotilla"
+        public static bool EventosEscenario(string[,] escenario, int[] coordenadas) // Retorna un true si la celda a desplazarse tiene un evento
         {
-            string celda = escenario[coordenadas[0], coordenadas[1]];
-            string decision = "";
+            string celda = escenario[coordenadas[0], coordenadas[1]]; // Celda a analizar
+            bool evento = false; // Nos servirá para saber si ocurrió un evento
 
             if (celda == "S")
             {
-                decision = "S";
+                if (EscenarioActual == "Zvezda")
+                {
+                    PintarEscenario(Zarya, 50, 33);
+                    EscenarioActual = "Zarya";
+                    evento = true; // Efectivamente ocurrió un evento
+                }
+                else if (EscenarioActual == "Zarya")
+                {
+                    PintarEscenario(Zvezda, 50, 2);
+                    EscenarioActual = "Zvezda";
+                    evento = true;
+                }
             }
-            if (celda == "A")
+            if (celda == "A") // Comprueba si el jugador está sobre una 'A' en el mapa
             {
-                
+                if (BotonPresionado.Key == ConsoleKey.S)
+                {
+                    PintarEscenario(Nauka, 50, 30);
+                    EscenarioActual = "Nauka";
+                    evento = true;
+                }
+                else if (BotonPresionado.Key == ConsoleKey.W)
+                {
+                    if (EscenarioActual == "Nauka")
+                    {
+                        PintarEscenario(Zarya, 50, 30);
+                        EscenarioActual = "Zarya";
+                        evento = true;
+                    }
+                }
             }
-            return 
+            return evento;
         }
         public static void ActualizarEscenario(string[,] escenario, int AnteriorCoordXPersonaje, int AnteriorCoordYPersonaje) // Vuelve a imprimir la celda en la que estaba el personaje e imprime el personaje en su nueva posición
         {
@@ -483,12 +499,11 @@ namespace MINIJUEGOS_ASCII
 
             // Dibujar el personaje en la nueva posición
             Console.SetCursorPosition(CoordPersonaje[0], CoordPersonaje[1]);
-            Console.Write("P");
+            Console.Write("O");
         }
-        public static bool Ascensor(string[,] escenario, int[] coordenadas)
+        public static void Mision()
         {
-            string celda = escenario[coordenadas[0], coordenadas[1]];
-            return celda == "A" || celda == "S";
+            Task.Delay(100).Wait(); // Mantiene el bucle
         }
         private static void MaximizarVentana()
         {
@@ -500,7 +515,6 @@ namespace MINIJUEGOS_ASCII
              * ShowWindow(3): Maximiza la ventana para que ocupe toda la pantalla
              */
         }
-
 
         // C O D I G O  D E L   F U N C I O N A M I E N T O   D E L   M O U S E
 
