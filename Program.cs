@@ -403,6 +403,7 @@ namespace MINIJUEGOS_ASCII
         }
         public static void Movimiento(string[,] escenario) // Desplaza el personaje por el mapa, pero solo después de verificar que es posible
         {
+            //h
             BotonPresionado = Console.ReadKey(true); // true evita que se muestre la tecla presionada
 
             byte ActualCoordXPersonaje = CoordPersonaje[0];
