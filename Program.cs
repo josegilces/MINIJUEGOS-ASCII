@@ -129,6 +129,7 @@ namespace MINIJUEGOS_ASCII
         public static byte[] CoordPersonaje = new byte[2]; //Un arreglo de dos posiciones para guardar las coordenadas X y Y de nuestro personaje
         public static ConsoleKeyInfo BotonPresionado = new ConsoleKeyInfo(); // Objeto al que se le pueden asignar valores de lo que se teclea
         public static string EscenarioActual = "Zvezda";
+        public static bool evento = false; // Nos servirá para saber si ocurrió un evento
 
         // MIEMBROS NECESARIOS PARA LA FUNCIONALIDAD DE ENTRADA POR RATÓN
         public static CONSOLE_FONT_INFO consoleFontInfo;
@@ -141,6 +142,10 @@ namespace MINIJUEGOS_ASCII
         public static string[,] Zvezda = new string[100, 35]; // Conecta directamente con Zarya
         public static string[,] Zarya = new string[100, 35]; // Conecta directamente con Zvezda y por ascensor con Nauka
         public static string[,] Nauka = new string[100, 35]; // Conecta mediante ascensor con Zarya
+        public static string[,] Rassvet = new string[100, 35]; // Conecta mediante ascensor con Zarya
+
+        //Personajes
+        public static bool Dialogo1 = false;
 
         public static void PrepararAmbienteConsola() // Forma parte de la funcionalidad de entrada por ratón
         {
@@ -347,8 +352,9 @@ namespace MINIJUEGOS_ASCII
             PrepararEscenario("assets/Mapas/Zvezda.txt", Zvezda); // Ejecuta el método PrepararEscenario para cargar los escenarios en los arreglos
             PrepararEscenario("assets/Mapas/Zarya.txt", Zarya);
             PrepararEscenario("assets/Mapas/Nauka.txt", Nauka);
+            PrepararEscenario("assets/Mapas/Rassvet.txt", Rassvet);
 
-            PintarEscenario(Zvezda, 50, 28); // Imprimimos por primera vez nuestro primer escenario Zvezda
+            PintarEscenario(Zvezda, 50, 35); // Imprimimos por primera vez nuestro primer escenario Zvezda
 
             while (true) // Bluce encargado de mantener ejecutando el minijuego
             {
@@ -365,6 +371,10 @@ namespace MINIJUEGOS_ASCII
                     if (EscenarioActual == "Nauka")
                     {
                         Movimiento(Nauka);
+                    }
+                    if (EscenarioActual == "Rassvet")
+                    {
+                        Movimiento(Rassvet);
                     }
                 }
             }
@@ -390,21 +400,32 @@ namespace MINIJUEGOS_ASCII
 
             Console.Clear();
 
-            for (int y = 0; y < 35; y++)
+            for (int y = 0; y < escenario.GetLength(1); y++) // Altura del escenario
             {
                 Console.SetCursorPosition(0, y);
-                for (int x = 0; x < 100; x++)
+                for (int x = 0; x < escenario.GetLength(0); x++) // Ancho del escenario
                 {
                     Console.Write(escenario[x, y]);
                 }
             }
+
             Console.SetCursorPosition(CoordPersonaje[0], CoordPersonaje[1]);
             Console.Write("O");
         }
+        public static void PintarDialogo(string rutaEscenario, byte CoordX, byte CoordY)
+        {
+            string[] lines = File.ReadAllLines(rutaEscenario); // Leer todas las líneas del archivo
+
+            for (int x = 0; x < lines.Length; x++) // Imprimir el diálogo
+            {
+                Console.SetCursorPosition(CoordX, CoordY + x); // Ubicar el cursor antes de imprimir
+                Console.WriteLine(lines[x]);
+            }
+        }
         public static void Movimiento(string[,] escenario) // Desplaza el personaje por el mapa, pero solo después de verificar que es posible
         {
-            //h
             BotonPresionado = Console.ReadKey(true); // true evita que se muestre la tecla presionada
+            evento = false;
 
             byte ActualCoordXPersonaje = CoordPersonaje[0];
             byte ActualCoordYPersonaje = CoordPersonaje[1]; // Guarda la posición (x,y) actual antes de moverse
@@ -445,26 +466,43 @@ namespace MINIJUEGOS_ASCII
             {
                 EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje });
             }
+            else if (BotonPresionado.Key == ConsoleKey.E)
+            {
+                EventosEscenario(escenario, new int[] { ActualCoordXPersonaje, ActualCoordYPersonaje });
+            }
 
-            ActualizarEscenario(escenario, ActualCoordXPersonaje, ActualCoordYPersonaje); // Enviamos la posición anterior para que se restaure bien
+            if (!evento && !NoActualizarEscenario) // Verificamos si hubo un evento par no actualizará el escenario, de lo contrario, nos restaurará la celda del escenario anterior sobre el nuevo escenario
+            {
+                ActualizarEscenario(escenario, ActualCoordXPersonaje, ActualCoordYPersonaje); // Enviamos la posición anterior para que se restaure bien
+            }
+
+
+            NoActualizarEscenario = false;
+
         }
         public static bool EsPosicionValida(string[,] escenario, int[] coordenadas) // Retorna un true si la celda a desplazarse no tiene colisión
         {
             string celda = escenario[coordenadas[0], coordenadas[1]];
-            return celda != "#" && celda != "║" && celda != "(" && celda != ")" && celda != " ";
+            return celda != "#" && celda != "║" && celda != "(" && celda != ")" && celda != " " && celda != "≡";
         }
         public static bool EventosEscenario(string[,] escenario, int[] coordenadas) // Retorna un true si la celda a desplazarse tiene un evento
         {
             string celda = escenario[coordenadas[0], coordenadas[1]]; // Celda a analizar
-            bool evento = false; // Nos servirá para saber si ocurrió un evento
 
             if (celda == "S")
             {
-                if (EscenarioActual == "Zvezda")
+                if (EscenarioActual == "Zvezda" && misiones[0])
                 {
                     PintarEscenario(Zarya, 50, 33);
                     EscenarioActual = "Zarya";
                     evento = true; // Efectivamente ocurrió un evento
+                }
+                else if (EscenarioActual == "Zvezda" && !misiones[0])
+                {
+                    Console.SetCursorPosition(67, 33);
+                    Console.ForegroundColor = ConsoleColor.Red; // Cambiar el color del mensaje
+                    Console.Write("Aviso: Debes restaurar el módulo Zvezda");
+                    Console.ResetColor();
                 }
                 else if (EscenarioActual == "Zarya")
                 {
@@ -477,19 +515,82 @@ namespace MINIJUEGOS_ASCII
             {
                 if (BotonPresionado.Key == ConsoleKey.S)
                 {
-                    PintarEscenario(Nauka, 50, 30);
-                    EscenarioActual = "Nauka";
-                    evento = true;
-                }
-                else if (BotonPresionado.Key == ConsoleKey.W)
-                {
-                    if (EscenarioActual == "Nauka")
+                    switch (EscenarioActual)
                     {
-                        PintarEscenario(Zarya, 50, 30);
-                        EscenarioActual = "Zarya";
-                        evento = true;
+                        case "Zarya":
+                            if (CoordPersonaje[0] == 49 && CoordPersonaje[1] == 29) // Traslado de escenario para ir de Zarya a Nauka mediante ascensor (A)
+                            {
+                                PintarEscenario(Nauka, 50, 30);
+                                EscenarioActual = "Nauka";
+                                evento = true;
+                            }
+                            if (CoordPersonaje[0] == 49 && CoordPersonaje[1] == 4) // Traslado de escenario para ir de Zarya a Rassvet mediante ascensor (A)
+                            {
+                                PintarEscenario(Rassvet, 50, 5);
+                                EscenarioActual = "Rassvet";
+                                evento = true;
+                            }
+                            break;
+                        default:
+                            break;
                     }
                 }
+                
+                if (BotonPresionado.Key == ConsoleKey.W)
+                {
+                    switch (EscenarioActual)
+                    {
+                        case "Nauka":
+                            if (CoordPersonaje[0] == 49 && CoordPersonaje[1] == 29) // Traslado de escenario para ir de Zarya a Nauka mediante ascensor (A)
+                            {
+                                PintarEscenario(Zarya, 50, 30);
+                                EscenarioActual = "Zarya";
+                                evento = true;
+                            }
+                            break;
+                        case "Rassvet":
+                            if (CoordPersonaje[0] == 49 && CoordPersonaje[1] == 4) // Traslado de escenario para ir de Zarya a Nauka mediante ascensor (A)
+                            {
+                                PintarEscenario(Zarya, 50, 5);
+                                EscenarioActual = "Zarya";
+                                evento = true;
+                            }
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            if (celda == "°")
+            {
+                ManejarInterruptores(escenario, coordenadas);
+            }
+
+            // Dialogos
+            switch (EscenarioActual)
+            {
+                case "Zvezda":
+                    if (coordenadas[0] > 35 && coordenadas[0] < 63 && coordenadas[1] == 29 && !Dialogo1)
+                    {
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-1.txt", 51, 23);
+                        Console.ReadKey();
+                        PintarEscenario(escenario, (byte)(CoordPersonaje[0]+1), (byte)(CoordPersonaje[1]+1)); // Le sumo +1 porque el método PintarEscenario por defecto me resta -1
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-2.txt", 51, 23);
+                        Console.ReadKey();
+                        PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-3.txt", 51, 23);
+                        Console.ReadKey();
+                        PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-4.txt", 51, 23);
+                        Console.ReadKey();
+                        PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+
+                        Dialogo1 = true;
+                        evento = true;
+                    }
+                    break;
+                default:
+                    break;
             }
             return evento;
         }
@@ -502,10 +603,91 @@ namespace MINIJUEGOS_ASCII
             Console.SetCursorPosition(CoordPersonaje[0], CoordPersonaje[1]);
             Console.Write("O");
         }
-        public static void Mision()
+
+        //    Task.Delay(100).Wait(); // Mantiene el bucle
+
+        // Variables que necesita el método ManejarInterruptores
+        static bool NoActualizarEscenario = false;
+        static bool[] interruptores = new bool[3]; // Guarda el estado de los interruptores
+        static int[] ordenActivacion = new int[3] { -1, -1, -1 }; // Guarda el orden en que se activan
+        static byte siguienteInterruptor = 0; // Indica qué interruptor se debe presionar en el orden correcto
+        static bool[] misiones = new bool[1];
+        public static void ManejarInterruptores(string[,] escenario, int[] coordenadas)
         {
-            Task.Delay(100).Wait(); // Mantiene el bucle
+            string celda = escenario[coordenadas[0], coordenadas[1]];
+
+            // Si la celda tiene un interruptor ("°") y se presiona la tecla "E"
+            if (celda == "°" && BotonPresionado.Key == ConsoleKey.E)
+            {
+                int index = -1;
+
+                // Determinar qué interruptor se está presionando
+                if (coordenadas[0] == 42 && coordenadas[1] == 6) index = 0;
+                if (coordenadas[0] == 42 && coordenadas[1] == 9) index = 1;
+                if (coordenadas[0] == 42 && coordenadas[1] == 12) index = 2;
+
+                if (index != -1)
+                {
+                    interruptores[index] = !interruptores[index]; // Cambiar el estado del interruptor
+
+                    // Si el interruptor no ha sido activado en el orden correcto, reiniciar
+                    if (ordenActivacion[index] == -1)
+                    {
+                        ordenActivacion[index] = siguienteInterruptor;
+                        siguienteInterruptor++;
+                    }
+
+                    // Mover el cursor a la posición del interruptor
+                    Console.SetCursorPosition(coordenadas[0], coordenadas[1]);
+
+                    // Cambiar el color a verde si el interruptor está activado
+                    if (interruptores[index])
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green; // Establece el color verde
+                        Console.Write("°");
+                    }
+                    else
+                    {
+                        Console.ResetColor(); // Restablece el color por defecto
+                        Console.Write("°");
+                    }
+
+                    // Verificar si todos los interruptores están activados
+                    if (interruptores[0] && interruptores[1] && interruptores[2])
+                    {
+                        // Comprobar si se activaron en el orden correcto
+                        Console.SetCursorPosition(67, 33);
+                        Console.ForegroundColor = ConsoleColor.Green; // Cambiar el color del mensaje
+                        if (ordenActivacion[0] == 0 && ordenActivacion[1] == 1 && ordenActivacion[2] == 2)
+                        {
+                            Console.Write("Aviso: Energía restaurada en Zvezda         ");
+                            misiones[0] = true;
+                        }
+                        else
+                        {
+                            // Si el orden no es el correcto, reiniciar todo y permitir reintentar
+                            ResetearInterruptores();
+                            Console.SetCursorPosition(67, 33);
+                            Console.ForegroundColor = ConsoleColor.Red; // Cambiar el color del mensaje
+                            Console.Write("Aviso: Orden incorrecto, vuelve a intentarlo");
+                        }
+                    }
+                }
+                Console.ResetColor(); // Restablece el color por defecto
+                NoActualizarEscenario = true; // Evita actualizar la pantalla
+                evento = true; // Indica que ocurrió un evento
+            }
         }
+
+        public static void ResetearInterruptores()
+        {
+            // Restablecer el estado de los interruptores y el orden de activación
+            interruptores = new bool[3];
+            ordenActivacion = new int[3] { -1, -1, -1 };
+            siguienteInterruptor = 0;
+        }
+
+
         private static void MaximizarVentana()
         {
             IntPtr identificadorConsola = GetConsoleWindow(); // Obtener el identificador de la ventana de la consola

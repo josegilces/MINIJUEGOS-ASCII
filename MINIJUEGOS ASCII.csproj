@@ -130,6 +130,10 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="bin\Debug\assets\Dialogos\ZvezdaDialogo1-1.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZvezdaDialogo1-2.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZvezdaDialogo1-3.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZvezdaDialogo1-4.txt" />
     <Content Include="bin\Debug\assets\Mapas\escenario1beta.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -139,6 +143,7 @@
     <Content Include="bin\Debug\assets\Mapas\Nauka.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="bin\Debug\assets\Mapas\Rassvet.txt" />
     <Content Include="bin\Debug\assets\Mapas\Zarya.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
