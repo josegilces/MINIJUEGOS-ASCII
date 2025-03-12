@@ -130,6 +130,12 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="bin\Debug\assets\Dialogos\ZaryaDialogo1-1.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZaryaDialogo1-2.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZaryaDialogo1-3.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZaryaDialogo1-4.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZaryaDialogo1-5.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\ZaryaDialogo1-6.txt" />
     <Content Include="bin\Debug\assets\Dialogos\ZvezdaDialogo1-1.txt" />
     <Content Include="bin\Debug\assets\Dialogos\ZvezdaDialogo1-2.txt" />
     <Content Include="bin\Debug\assets\Dialogos\ZvezdaDialogo1-3.txt" />
@@ -147,18 +153,21 @@
     <Content Include="bin\Debug\assets\Mapas\Zarya.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="bin\Debug\assets\Mapas\Zarya2.txt" />
     <Content Include="bin\Debug\assets\Mapas\Zvezda.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="bin\Debug\assets\Menus\MenuInstrucciones.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="bin\Debug\assets\Menus\MenuMinijuegos.txt" />
     <Content Include="bin\Debug\assets\Menus\MenuPrincipal.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="bin\Debug\assets\Sounds\Interstellar.mp3">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="bin\Debug\assets\Sounds\Lobby.mp3" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
