@@ -260,7 +260,7 @@ namespace MINIJUEGOS_ASCII
                 // Dejar todo limpio y listo para la ejecución del minijuego
                 Console.Clear();
                 Console.SetCursorPosition(0, 0);
-                Console.CursorVisible = false; // Ocultar el cursor de la consola
+                Console.ResetColor();
             }
             else // Configuración para volver al menú principal
             {
@@ -462,6 +462,16 @@ namespace MINIJUEGOS_ASCII
                     if (EscenarioActual == "Rassvet")
                     {
                         Movimiento(Rassvet);
+                    }
+                    if (Dialogos[2])
+                    {
+                        return;
+                    }
+                    if (BotonPresionado.Key == ConsoleKey.Escape)
+                    {
+                        ConfigurarConsola(false);
+                        cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
+                        return;
                     }
                 }
             }
@@ -679,16 +689,16 @@ namespace MINIJUEGOS_ASCII
                 case "Zvezda":
                     if (coordenadas[0] > 35 && coordenadas[0] < 63 && coordenadas[1] == 29 && !Dialogos[0])
                     {
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-1.txt", 27, 20);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZvezdaDialogo1-1.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1)); // Le sumo +1 porque el método PintarEscenario por defecto me resta -1
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-2.txt", 27, 20);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZvezdaDialogo1-2.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-3.txt", 27, 20);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZvezdaDialogo1-3.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-4.txt", 27, 20);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZvezdaDialogo1-4.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
 
@@ -725,10 +735,10 @@ namespace MINIJUEGOS_ASCII
                 case "Rassvet":
                     if (coordenadas[0] > 39 && coordenadas[0] < 57 && coordenadas[1] == 20 && !Dialogos[2])
                     {
-                        PintarDialogo("assets/Dialogos/RassvetDialogo1-1.txt", 18, 20);
+                        PintarDialogo("bin/Debug/assets/Dialogos/RassvetDialogo1-1.txt", 18, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1)); // Le sumo +1 porque el método PintarEscenario por defecto me resta -1
-                        PintarDialogo("assets/Dialogos/RassvetDialogo1-2.txt", 18, 20);
+                        PintarDialogo("bin/Debug/assets/Dialogos/RassvetDialogo1-2.txt", 18, 20);
                         Console.ReadKey();
 
                         Dialogos[2] = true;
@@ -950,199 +960,230 @@ namespace MINIJUEGOS_ASCII
     }
     internal class PiedraPapelYTijeras
     {
-        private static readonly string[] opciones = { "Piedra", "Papel", "Tijeras" }; // Opciones del juego
-        private static Random random = new Random(); // Generador de números aleatorios de la computadora
-        private static bool instruccionesMostradas = false;
+        private static readonly string[] opciones = { "Piedra", "Papel", "Tijeras" };
+        private static Random random = new Random();
 
         public static void Iniciar()
         {
-            Console.Clear(); // Limpiar la pantalla de la consola 
+            bool instruccionesMostradas = false;
 
             while (true)
             {
                 Console.Clear();
 
+
                 if (!instruccionesMostradas)
                 {
-                    MostrarInstruccionesLadoDerecho();
+                    MostrarInstrucciones();
                     instruccionesMostradas = true;
                 }
 
-                Console.SetCursorPosition(10, 3);
-                Console.WriteLine("Seleccione una opción con el número correspondiente:");
+                MostrarOpciones();
 
-                // Mostrar las opciones numeradas
-                for (int i = 0; i < opciones.Length; i++)
-                {
-                    Console.SetCursorPosition(10, 5 + i * 5);
-                    Console.WriteLine($"{i + 1}. {opciones[i]}");
-                    DibujarOpcion(opciones[i], 10, 6 + i * 5);
-                }
 
-                // Leer la opción del usuario
-                int eleccionUsuario;
-                Console.SetCursorPosition(10, 6 + opciones.Length * 5);
-                Console.Write("Selecciona una opción: ");
-                if (int.TryParse(Console.ReadLine(), out eleccionUsuario) && eleccionUsuario >= 1 && eleccionUsuario <= 3)
-                {
-                    Jugar(opciones[eleccionUsuario - 1]); // Jugar con la opción seleccionada
-                }
-                else
-                {
+                int eleccionUsuario = LeerOpcionUsuario();
 
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.SetCursorPosition(10, 6 + opciones.Length * 5 + 1);
-                    Console.WriteLine("¡ERROR! Presiona cualquier tecla e ingresa una opción válida.");
-                    Console.ResetColor();
-                    Console.ReadKey();
-                    continue; // Volver al principio del ciclo si la opción es inválida
-                }
+
+                string eleccionUsuarioStr = opciones[eleccionUsuario - 1];
+                string eleccionComputadora = opciones[random.Next(3)];
+
+                Console.Clear();
+                Console.WriteLine($"Tú elegiste: {eleccionUsuarioStr}");
+                Console.WriteLine($"La computadora eligió: {eleccionComputadora}");
+                DibujarOpcion(eleccionUsuarioStr, 5, 5);
+                DibujarOpcion(eleccionComputadora, 25, 5);
+
+                MostrarResultado(eleccionUsuarioStr, eleccionComputadora);
+
+                Console.WriteLine("Presiona cualquier tecla para continuar...");
+                Console.ReadKey();
 
 
                 Console.Clear();
-                Console.WriteLine("DESEAS SEGUIR");
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("¿DESEAS CONTINUAR JUGANDO?");
+                Console.ResetColor();
                 Console.WriteLine("1. Sí");
                 Console.WriteLine("2. No");
-                string respuesta = Console.ReadLine();
 
-                while (respuesta != "1" && respuesta != "2")
+                string respuestaSalir = Console.ReadLine();
+
+                while (respuestaSalir != "1" && respuestaSalir != "2")
                 {
+                    Console.Clear();
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine("¿DESEAS CONTINUAR JUGANDO?");
+                    Console.ResetColor();
+                    Console.WriteLine("1. Sí");
+                    Console.WriteLine("2. No");
 
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("¡ERROR! Ingresa una opción válida");
+                    Console.WriteLine("¡ERROR! Ingrese una opción correcta");
                     Console.ResetColor();
-                    respuesta = Console.ReadLine();
+                    respuestaSalir = Console.ReadLine();
                 }
 
-                if (respuesta == "2")
+                if (respuestaSalir == "2")
                 {
-                    Console.WriteLine("GRACIAS");
+
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("GRACIAS, VUELVE PRONTO!");
+                    Console.ResetColor();
                     break;
                 }
+
+                instruccionesMostradas = false;
             }
         }
 
-        private static void Jugar(string eleccionUsuario)
+        private static void MostrarInstrucciones()
         {
-            string eleccionComputadora = opciones[random.Next(3)]; // Selección aleatoria de la computadora
-            Console.Clear();
-            Console.WriteLine($"Tú elegiste: {eleccionUsuario}");
-            Console.WriteLine($"La computadora eligió: {eleccionComputadora}");
-            DibujarOpcion(eleccionUsuario, 5, 5);
-            DibujarOpcion(eleccionComputadora, 25, 5);
+            int startX = 40;
+            int startY = 5;
 
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.SetCursorPosition(startX, startY);
+            Console.WriteLine("Instrucciones:");
+            Console.ResetColor();
+
+            string[] instrucciones = new string[]
+            {
+        "1. Elige una opción entre Piedra, Papel o Tijeras.",
+        "2. Usa el número correspondiente para seleccionar la opción.",
+        "3. Piedra vence a Tijeras.",
+        "4. Tijeras vencen a Papel.",
+        "5. Papel vence a Piedra.",
+        "6. Si ambos eligen la misma opción, es un empate."
+            };
+
+            for (int i = 0; i < instrucciones.Length; i++)
+            {
+                Console.SetCursorPosition(startX, startY + i + 1);
+                Console.ForegroundColor = (ConsoleColor)(i + 2);
+                Console.WriteLine(instrucciones[i]);
+            }
+
+            Console.ResetColor();
+        }
+
+
+        private static void MostrarOpciones()
+        {
+            Console.SetCursorPosition(10, 3);
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("Seleccione una opción con el número correspondiente:");
+            Console.ResetColor();
+
+            for (int i = 0; i < opciones.Length; i++)
+            {
+                Console.SetCursorPosition(10, 5 + i * 5);
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine($"{i + 1}. {opciones[i]}");
+                DibujarOpcion(opciones[i], 10, 6 + i * 5);
+            }
+        }
+
+
+        private static int LeerOpcionUsuario()
+        {
+            int eleccionUsuario;
+
+            do
+            {
+                Console.SetCursorPosition(10, 6 + opciones.Length * 5);
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write("Selecciona una opción: ");
+                Console.ResetColor();
+
+                string respuesta = Console.ReadLine();
+                Console.SetCursorPosition(10, 6 + opciones.Length * 5);
+                Console.Write(new string(' ', Console.WindowWidth - 10));
+
+                if (int.TryParse(respuesta, out eleccionUsuario) && eleccionUsuario >= 1 && eleccionUsuario <= 3)
+                    break;
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.SetCursorPosition(10, 6 + opciones.Length * 5 + 1);
+                    Console.WriteLine("¡ERROR! Ingrese una opción correcta");
+                    Console.ResetColor();
+                }
+
+            } while (true);
+
+            return eleccionUsuario;
+        }
+
+
+        private static void MostrarResultado(string eleccionUsuario, string eleccionComputadora)
+        {
             if (eleccionUsuario == eleccionComputadora)
             {
+                Console.ForegroundColor = ConsoleColor.Gray;
                 Console.WriteLine("¡Es un empate!");
             }
             else if ((eleccionUsuario == "Piedra" && eleccionComputadora == "Tijeras") ||
                      (eleccionUsuario == "Papel" && eleccionComputadora == "Piedra") ||
                      (eleccionUsuario == "Tijeras" && eleccionComputadora == "Papel"))
             {
+                Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("¡Ganaste!");
             }
             else
             {
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine("Perdiste. Inténtalo de nuevo.");
             }
-
-            Console.WriteLine("Presiona cualquier tecla para continuar...");
-            Console.ReadKey();
-        }
-
-        private static void DibujarOpcion(string opcion, int x, int y) // Mueve el cursor a la siguiente línea
-        {
-            Console.SetCursorPosition(x, y);
-
-            switch (opcion)
-            {
-                case "Piedra":
-                    Console.ForegroundColor = ConsoleColor.Gray;
-                    Console.BackgroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine("     █████     ");
-                    Console.SetCursorPosition(x, y + 1);
-                    Console.WriteLine("    ███████    ");
-                    Console.SetCursorPosition(x, y + 2);
-                    Console.WriteLine("    ███████    ");
-                    Console.SetCursorPosition(x, y + 3);
-                    Console.WriteLine("     █████     ");
-                    break;
-
-                case "Papel":
-                    Console.ForegroundColor = ConsoleColor.White;
-                    Console.BackgroundColor = ConsoleColor.Black;
-                    Console.WriteLine("   █████████   ");
-                    Console.SetCursorPosition(x, y + 1);
-                    Console.WriteLine("   █████████   ");
-                    Console.SetCursorPosition(x, y + 2);
-                    Console.WriteLine("   █████████   ");
-                    Console.SetCursorPosition(x, y + 3);
-                    Console.WriteLine("   █████████   ");
-                    break;
-
-                case "Tijeras":
-                    Console.ForegroundColor = ConsoleColor.DarkGreen;
-                    Console.BackgroundColor = ConsoleColor.Black;
-                    Console.WriteLine("     █   █    ");
-                    Console.SetCursorPosition(x, y + 1);
-                    Console.WriteLine("      █ █     ");
-                    Console.SetCursorPosition(x, y + 2);
-                    Console.WriteLine("       █      ");
-                    Console.SetCursorPosition(x, y + 3);
-                    Console.WriteLine("     ██ ██    ");
-                    break;
-            }
-
 
             Console.ResetColor();
         }
 
-        private static void MostrarInstruccionesLadoDerecho()
+
+        private static void DibujarOpcion(string opcion, int x, int y)
         {
-            int startX = 40;
-            int startY = 5;
+            Console.SetCursorPosition(x, y);
 
-
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.SetCursorPosition(startX, startY);
-            Console.WriteLine("Instrucciones:");
-            Console.ForegroundColor = ConsoleColor.White;
-
-
-            string[] instrucciones = new string[]
+            if (opcion == "Piedra")
             {
-            "1. Elige una opción entre Piedra, Papel o Tijeras.",
-            "2. Usa el número correspondiente para seleccionar la opción.",
-            "3. Piedra vence a Tijeras.",
-            "4. Tijeras vencen a Papel.",
-            "5. Papel vence a Piedra.",
-            "6. Si ambos eligen la misma opción, es un empate."
-            };
-
-
-            for (int i = 0; i < instrucciones.Length; i++)
-            {
-                Console.SetCursorPosition(startX, startY + i + 1);
-                if (i == 0)
-                    Console.ForegroundColor = ConsoleColor.Green;
-                else if (i == 1)
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                else if (i == 2)
-                    Console.ForegroundColor = ConsoleColor.Red;
-                else if (i == 3)
-                    Console.ForegroundColor = ConsoleColor.Magenta;
-                else if (i == 4)
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                else
-                    Console.ForegroundColor = ConsoleColor.Gray;
-
-                Console.WriteLine(instrucciones[i]);
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.WriteLine("     ▄ ▄ ▄     ");
+                Console.SetCursorPosition(x, y + 1);
+                Console.WriteLine("   ▄▀▄▀▄▀▄▀▄   ");
+                Console.SetCursorPosition(x, y + 2);
+                Console.WriteLine("   ▀▄▀▄▀▄▀▄▀   ");
+                Console.SetCursorPosition(x, y + 3);
+                Console.WriteLine("     ▀ ▀ ▀     ");
             }
-
+            else if (opcion == "Papel")
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.WriteLine("  ███████████  ");
+                Console.SetCursorPosition(x, y + 1);
+                Console.WriteLine("  ███████████   ");
+                Console.SetCursorPosition(x, y + 2);
+                Console.WriteLine("  ███████████  ");
+                Console.SetCursorPosition(x, y + 3);
+                Console.WriteLine("  ███████████  ");
+            }
+            else if (opcion == "Tijeras")
+            {
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.BackgroundColor = ConsoleColor.Magenta;
+                Console.WriteLine("     █   █     ");
+                Console.SetCursorPosition(x, y + 1);
+                Console.WriteLine("      █ █      ");
+                Console.SetCursorPosition(x, y + 2);
+                Console.WriteLine("       █       ");
+                Console.SetCursorPosition(x, y + 3);
+                Console.WriteLine("     ██ ██     ");
+            }
 
             Console.ResetColor();
         }
     }
+
     internal class Ahorcado
     {
         private static SoundPlayer player;
