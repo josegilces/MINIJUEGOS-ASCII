@@ -27,87 +27,96 @@ namespace MINIJUEGOS_ASCII
         {
             // Configuración de la consola antes de la ejecución del menú
             ConsoleHelper.DisableQuickEdit(); // Deshabilitar QuickEdit Mode
+            Console.CursorVisible = false;
             Console.SetWindowSize(100, 35); // Ajusta el tamaño de la ventana de la consola para todo el programa
             Console.SetBufferSize(100, 35); // Evita el scroll
-
-            // OBSOLETO: Configuración previa de la música
-
-            //if (cancellationTokenSource.IsCancellationRequested) // Reiniciar el CancellationTokenSource si ya fue cancelado
-            //{
-            //    cancellationTokenSource.Dispose(); // Liberar recursos del antiguo
-            //    cancellationTokenSource = new CancellationTokenSource(); // Crear uno nuevo
-            //}
 
             // Iniciar la tarea de música con el CancellationToken
             musicaTask = Task.Run(() => Musica(cancellationTokenSource.Token)); // Usa Task para ejecutar la música en segundo plano
 
-            CargarMenu(true);
+            CargarMenu(true); // Cargar el menú gráfico por primera vez
 
             // Funcionalidad del menú
             while (true) // Mantiene el menú activo siempre
             {
-                // Variables necesarias para la estética del programa
-                bool opcionNoValida = false; // Variable que nos permitirá saber si el flujo del programa pasó por el caso 'default' del switch
-                bool minijuegoEjecutado = false; // Variable que nos permitirá saber si el flujo del programa ejecutó un minijuego
-
-                Console.SetCursorPosition(49, 30);
-                //Console.SetCursorPosition(49, 30); // Establece la posición del cursor en las coordenadas x=49, y=31, entiendo que el punto de inicio de la consola es (1,1)
-                var Opcion = Console.ReadLine();
-
-                switch (Opcion)
+                // Funcionalidad del mouse
+                Point posicionConsola = FuncionalidadMouse.ObtenerPosicionMouseEnConsola();
+                Debug.WriteLine("Posición X: " + posicionConsola.X + ", Posición Y: " + posicionConsola.Y);
+                // Verificar si se presionó el botón izquierdo del mouse
+                if (Control.MouseButtons == MouseButtons.Left)
                 {
-                    case "1":
-                        ConfiguracionConsola();
+                    // Coordenadas del botón Laberinto
+                    if (posicionConsola.X >= 35 && posicionConsola.X <= 63 && posicionConsola.Y >= 21 && posicionConsola.Y <= 23)
+                    {
+                        // Detener la música antes de iniciar el minijuego
+                        cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
+                        musicaTask.Wait(); // Espera a que la tarea de música termine
+
+                        // Ejecutar el minijuego de Laberinto
+                        ConfiguracionConsola(true); // Configura la consola para el minijuego
                         Laberinto.MenuPrincipal(); // Se ejecuta el minijuego
-                        minijuegoEjecutado = true;
+
+                        // Volver al menú principal después de terminar el minijuego
+                        ConfiguracionConsola(false); // Restaura la configuración de la consola
+                        CargarMenu(false); // Volver a cargar el menú gráfico
                         break;
-                    case "2":
-                        ConfiguracionConsola();
+                    }
+
+                    // Coordenadas del botón Piedra, Papel o Tijeras
+                    if (posicionConsola.X >= 35 && posicionConsola.X <= 63 && posicionConsola.Y >= 25 && posicionConsola.Y <= 27)
+                    {
+                        // Detener la música antes de iniciar el minijuego
+                        cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
+                        musicaTask.Wait(); // Espera a que la tarea de música termine
+
+                        // Ejecutar el minijuego de Piedra, Papel o Tijeras
+                        ConfiguracionConsola(true);
                         PiedraPapelYTijeras.Iniciar();
-                        minijuegoEjecutado = true;
+
+                        // Volver al menú principal después de terminar el minijuego
+                        ConfiguracionConsola(false); // Restaurar la configuración de la consola
+                        CargarMenu(false); // Volver a cargar el menú gráfico
                         break;
-                    case "3":
-                        ConfiguracionConsola();
+                    }
+
+                    // Coordenadas del botón Ahorcado
+                    if (posicionConsola.X >= 36 && posicionConsola.X <= 64 && posicionConsola.Y >= 30 && posicionConsola.Y <= 32)
+                    {
+                        // Detener la música antes de iniciar el minijuego
+                        cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
+                        musicaTask.Wait(); // Espera a que la tarea de música termine
+
+                        // Ejecutar el minijuego de Ahorcado
+                        ConfiguracionConsola(true);
                         Ahorcado.Iniciar();
-                        minijuegoEjecutado = true;
+
+                        // Volver al menú principal después de terminar el minijuego
+                        ConfiguracionConsola(false); // Restaurar la configuración de la consola
+                        CargarMenu(false); // Volver a cargar el menú gráfico
                         break;
-                    case "4":
+                    }
+
+                    // Coordenadas del "botón" Salir
+                    if (posicionConsola.X >= 79 && posicionConsola.X <= 93 && posicionConsola.Y >= 30 && posicionConsola.Y <= 32)
+                    {
+                        // Detener la música al salir
+                        cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
+                        musicaTask.Wait(); // Espera a que la tarea de música termine
+
+                        // Mostrar mensaje de salida
                         Console.SetCursorPosition(8, 31);
                         Console.Write("Saliendo...      ");
                         Console.SetCursorPosition(49, 30);
                         Thread.Sleep(2000); // Hace una pausa del programa por 2 segundos
                         return; // Sale del programa
-                    default:
-                        opcionNoValida = true; // Variable que nos permitirá saber si el flujo del programa pasó por el caso 'default' del switch
-                        break;
-                }
+                    }
 
-                // Las siguientes instrucciones deben ejecutarse solamente después de finalizar cada minijuego
-                if (!opcionNoValida) // Esto evita que se duplique de nuevo la música después de que se ejecuten las instrucciones por el caso 'default' del switch
-                {
-                    CargarMenu(false); // Imprimir menú gráfico de nuevo al finalizar un minijuego
-
-                    // Reactivar la música después de jugar
-                    cancellationTokenSource = new CancellationTokenSource();
-                    musicaTask = Task.Run(() => Musica(cancellationTokenSource.Token));
-                }
-                else if (opcionNoValida && (minijuegoEjecutado == false))
-                {
-                    // Instrucciones destinadas a la estética, sino al ingresar una opción no válida, sigue mostrándose en pantalla lo escrito anteriormente
-                    Console.SetCursorPosition(8, 31);
-                    Console.Write("Opción no válida.");
-                    Console.SetCursorPosition(49, 30);
-                    Thread.Sleep(1000);
-                    Console.CursorVisible = false;
-                    CargarMenu(false); // Imprimir menú gráfico de nuevo solo por motivos estéticos, ya que al ingresar una opción no válida, sigue mostrándose en pantalla lo escrito anteriormente
-                    Console.CursorVisible = true;
+                    // Limpiar el estado del mouse después del clic
+                    //ClearMouseInput();
                 }
             }
-
-            //Info. de desarrollador
-            //Console.SetBufferSize(120, 35);
-            //Console.WriteLine($"Buffer: {Console.BufferWidth}x{Console.BufferHeight}");
         }
+
         static void Musica(CancellationToken token) // Carga y reproduce la música
         {
             try
@@ -131,7 +140,7 @@ namespace MINIJUEGOS_ASCII
                                 outputDevice.Dispose(); // Liberar recursos
                                 break; // Sal del bucle externo también
                             }
-                            Task.Delay(3000).Wait(); // Mantiene el bucle mientras la música se esté reproduciendo
+                            Task.Delay(1000).Wait(); // Mantiene el bucle mientras la música se esté reproduciendo
                         }
                     }
                 }
@@ -211,23 +220,69 @@ namespace MINIJUEGOS_ASCII
                             Console.ForegroundColor = ConsoleColor.DarkBlue;
                         }
                     }
+
+                    // Pinta los botones
+                    if (x >= 35 && x <= 63 && y >= 21 && y <= 23) // Coordenadas del Botón Laberinto
+                    {
+                        Console.BackgroundColor = ConsoleColor.Gray;
+                        Console.ForegroundColor = ConsoleColor.Black;
+                    }
+                    if (x >= 35 && x <= 63 && y >= 25 && y <= 27) // Coordenadas del Botón Piedra...
+                    {
+                        Console.BackgroundColor = ConsoleColor.Gray;
+                        Console.ForegroundColor = ConsoleColor.Black;
+                    }
+                    if (x >= 35 && x <= 63 && y >= 29 && y <= 31) // Coordenadas del Botón El Ahorcado y Salir
+                    {
+                        Console.BackgroundColor = ConsoleColor.Gray;
+                        Console.ForegroundColor = ConsoleColor.Black;
+                    }
+                    if (x >= 78 && x <= 92 && y >= 29 && y <= 31) // Coordenadas del Botón Salir
+                    {
+                        Console.BackgroundColor = ConsoleColor.Gray;
+                        Console.ForegroundColor = ConsoleColor.Black;
+                    }
+                    
                     Console.Write(escenario[x, y]);
                 }
             }
         }
-        static void ConfiguracionConsola() // Configuración de la consola antes de la ejecución del minijuego
+        static void ConfiguracionConsola(bool decision) // Configuración de la consola antes y después de la ejecución del minijuego
         {
-            // Instrucciones destinadas a la estética
-            Console.SetCursorPosition(8, 32);
-            Console.Write("Cargando...      ");
-            Console.SetCursorPosition(49, 31);
+            if (decision) // Configuración para iniciar un minijuego
+            {
+                // Instrucciones destinadas a la estética
+                Console.SetCursorPosition(8, 32);
+                Console.Write("Cargando...      ");
+                Console.SetCursorPosition(49, 31);
 
-            cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
-            musicaTask.Wait(); // Espera a que la tarea de música termine
+                cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
+                musicaTask.Wait(); // Espera a que la tarea de música termine
 
-            // Dejar todo limpio y listo para la ejecución del minijuego
-            Console.Clear();
-            Console.SetCursorPosition(0, 0);
+                // Dejar todo limpio y listo para la ejecución del minijuego
+                Console.Clear();
+                Console.SetCursorPosition(0, 0);
+                Console.CursorVisible = false; // Ocultar el cursor de la consola
+            }
+            else // Configuración para volver al menú principal
+            {
+                // Restaurar la configuración de la consola
+                Console.Clear();
+                Console.SetCursorPosition(0, 0);
+                Console.BackgroundColor = ConsoleColor.White; // Restablecer el color de fondo
+                Console.ForegroundColor = ConsoleColor.Black; // Restablecer el color del texto
+            }
+        }
+        public static void ClearMouseInput()
+        {
+            // Simular un pequeño retraso para evitar que el clic se procese múltiples veces
+            Thread.Sleep(100);
+
+            // Limpiar el búfer de entrada del mouse
+            while (Control.MouseButtons == MouseButtons.Left)
+            {
+                Thread.Sleep(10);
+            }
         }
     }
     internal class Laberinto
@@ -345,7 +400,7 @@ namespace MINIJUEGOS_ASCII
 
             while (true) // Bluce encargado de mantener ejecutando las funcionalidades para el menú hasta que se elija una de las dos opciones
             {
-                Point posicionConsola = ObtenerPosicionMouseEnConsola();
+                Point posicionConsola = FuncionalidadMouse.ObtenerPosicionMouseEnConsola();
 
                 // Verificar si se presionó el botón izquierdo del mouse
                 if (Control.MouseButtons == MouseButtons.Left)
@@ -377,7 +432,7 @@ namespace MINIJUEGOS_ASCII
 
             while (true) // Bluce encargado de mantener ejecutando las funcionalidades para el menú hasta que se elija una de las dos opciones
             {
-                Point posicionConsola = ObtenerPosicionMouseEnConsola();
+                Point posicionConsola = FuncionalidadMouse.ObtenerPosicionMouseEnConsola();
 
                 // Verificar si se presionó el botón izquierdo del mouse
                 if (Control.MouseButtons == MouseButtons.Left)
@@ -799,70 +854,9 @@ namespace MINIJUEGOS_ASCII
         public static int SuministrosRecolectados = 0; // Cantidad de suministros recolectados
         public static int SuministrosTotales = 5; // Total de suministros en Zarya (ajusta según tu mapa)
 
-        private static Point ObtenerPosicionMouseEnConsola()
-        {
-            Point posicionCursor = Cursor.Position; // Obtener la posición actual del cursor del ratón
-
-            // Obtener la ventana de la consola
-            IntPtr consoleHandle = GetConsoleWindow();
-            RECT consoleRect;
-            GetWindowRect(consoleHandle, out consoleRect);
-
-            // Obtener información sobre la fuente de la consola
-            CONSOLE_FONT_INFO consoleFontInfo;
-            IntPtr outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-            GetCurrentConsoleFont(outputHandle, false, out consoleFontInfo);
-
-            // Ajuste de coordenadas basado en la posición y tamaño de la consola
-            int consoleLeft = consoleRect.Left + 8; // Ajuste por borde izquierdo
-            int consoleTop = consoleRect.Top + 30; // Ajuste por borde superior
-
-            // Convertir coordenadas de pantalla a coordenadas de la consola
-            return new Point(
-                (posicionCursor.X - consoleLeft) / consoleFontInfo.dwFontSize.X,
-                (posicionCursor.Y - consoleTop) / consoleFontInfo.dwFontSize.Y
-            );
-        }
-
-        // Definiciones necesarias para obtener información de la ventana de la consola y su fuente
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GetConsoleWindow();
-
-        [DllImport("user32.dll")]
-        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-
-        [DllImport("kernel32.dll")]
-        private static extern IntPtr GetStdHandle(int nStdHandle);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont);
-
-        private const int STD_OUTPUT_HANDLE = -11;
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct RECT
-        {
-            public int Left;
-            public int Top;
-            public int Right;
-            public int Bottom;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct CONSOLE_FONT_INFO
-        {
-            public uint nFont;
-            public COORD dwFontSize;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct COORD
-        {
-            public short X;
-            public short Y;
-        }
+        
     }
-    internal static class ConsoleHelper
+    internal static class ConsoleHelper // Es una clase que se encarga de deshabilitar el Modo de Selección Rápida (QuickEdit Mode) 
     {
         const uint ENABLE_QUICK_EDIT = 0x0040;
         const uint ENABLE_EXTENDED_FLAGS = 0x0080;
@@ -1257,4 +1251,69 @@ namespace MINIJUEGOS_ASCII
 
     }
 
+    internal class FuncionalidadMouse
+    {
+        public static Point ObtenerPosicionMouseEnConsola()
+        {
+            Point posicionCursor = Cursor.Position; // Obtener la posición actual del cursor del ratón
+
+            // Obtener la ventana de la consola
+            IntPtr consoleHandle = GetConsoleWindow();
+            RECT consoleRect;
+            GetWindowRect(consoleHandle, out consoleRect);
+
+            // Obtener información sobre la fuente de la consola
+            CONSOLE_FONT_INFO consoleFontInfo;
+            IntPtr outputHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+            GetCurrentConsoleFont(outputHandle, false, out consoleFontInfo);
+
+            // Ajuste de coordenadas basado en la posición y tamaño de la consola
+            int consoleLeft = consoleRect.Left + 8; // Ajuste por borde izquierdo
+            int consoleTop = consoleRect.Top + 30; // Ajuste por borde superior
+
+            // Convertir coordenadas de pantalla a coordenadas de la consola
+            return new Point(
+                (posicionCursor.X - consoleLeft) / consoleFontInfo.dwFontSize.X,
+                (posicionCursor.Y - consoleTop) / consoleFontInfo.dwFontSize.Y
+            );
+        }
+
+        // Definiciones necesarias para obtener información de la ventana de la consola y su fuente
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        private static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetStdHandle(int nStdHandle);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GetCurrentConsoleFont(IntPtr hConsoleOutput, bool bMaximumWindow, out CONSOLE_FONT_INFO lpConsoleCurrentFont);
+
+        private const int STD_OUTPUT_HANDLE = -11;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct CONSOLE_FONT_INFO
+        {
+            public uint nFont;
+            public COORD dwFontSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct COORD
+        {
+            public short X;
+            public short Y;
+        }
+    }
 }
