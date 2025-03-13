@@ -23,7 +23,7 @@
     <UpdatePeriodically>false</UpdatePeriodically>
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
-    <ApplicationRevision>24</ApplicationRevision>
+    <ApplicationRevision>29</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
@@ -138,6 +138,8 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="bin\Debug\assets\Dialogos\RassvetDialogo1-1.txt" />
+    <Content Include="bin\Debug\assets\Dialogos\RassvetDialogo1-2.txt" />
     <Content Include="bin\Debug\assets\Dialogos\ZaryaDialogo1-1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

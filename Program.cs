@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks; // Importa el espacio de nombres System.Threading.Tasks, que proporciona tipos y métodos para manejar operaciones asíncronas y paralelas
@@ -28,8 +29,9 @@ namespace MINIJUEGOS_ASCII
             // Configuración de la consola antes de la ejecución del menú
             ConsoleHelper.DisableQuickEdit(); // Deshabilitar QuickEdit Mode
             Console.CursorVisible = false;
-            Console.SetWindowSize(100, 35); // Ajusta el tamaño de la ventana de la consola para todo el programa
-            Console.SetBufferSize(100, 35); // Evita el scroll
+
+            Console.SetWindowSize(100, 36); // Ajusta el tamaño de la ventana de la consola para todo el programa
+            Console.SetBufferSize(100, 36); // Evita el scroll
 
             // Iniciar la tarea de música con el CancellationToken
             musicaTask = Task.Run(() => Musica(cancellationTokenSource.Token)); // Usa Task para ejecutar la música en segundo plano
@@ -39,9 +41,9 @@ namespace MINIJUEGOS_ASCII
             // Funcionalidad del menú
             while (true) // Mantiene el menú activo siempre
             {
-                // Funcionalidad del mouse
-                Point posicionConsola = FuncionalidadMouse.ObtenerPosicionMouseEnConsola();
-                Debug.WriteLine("Posición X: " + posicionConsola.X + ", Posición Y: " + posicionConsola.Y);
+                Point posicionConsola = FuncionalidadMouse.ObtenerPosicionMouseEnConsola(); // Parte de la funcionalidad del mouse
+                Debug.WriteLine("Posición X: " + posicionConsola.X + ", Posición Y: " + posicionConsola.Y); // Info. para Desarrollador
+
                 // Verificar si se presionó el botón izquierdo del mouse
                 if (Control.MouseButtons == MouseButtons.Left)
                 {
@@ -59,7 +61,6 @@ namespace MINIJUEGOS_ASCII
                         // Volver al menú principal después de terminar el minijuego
                         ConfiguracionConsola(false); // Restaura la configuración de la consola
                         CargarMenu(false); // Volver a cargar el menú gráfico
-                        break;
                     }
 
                     // Coordenadas del botón Piedra, Papel o Tijeras
@@ -76,11 +77,10 @@ namespace MINIJUEGOS_ASCII
                         // Volver al menú principal después de terminar el minijuego
                         ConfiguracionConsola(false); // Restaurar la configuración de la consola
                         CargarMenu(false); // Volver a cargar el menú gráfico
-                        break;
                     }
 
                     // Coordenadas del botón Ahorcado
-                    if (posicionConsola.X >= 36 && posicionConsola.X <= 64 && posicionConsola.Y >= 30 && posicionConsola.Y <= 32)
+                    if (posicionConsola.X >= 35 && posicionConsola.X <= 63 && posicionConsola.Y >= 29 && posicionConsola.Y <= 31)
                     {
                         // Detener la música antes de iniciar el minijuego
                         cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
@@ -88,16 +88,15 @@ namespace MINIJUEGOS_ASCII
 
                         // Ejecutar el minijuego de Ahorcado
                         ConfiguracionConsola(true);
-                        Ahorcado.Iniciar();
+                        Ahorcado.Ejecutar();
 
                         // Volver al menú principal después de terminar el minijuego
                         ConfiguracionConsola(false); // Restaurar la configuración de la consola
                         CargarMenu(false); // Volver a cargar el menú gráfico
-                        break;
                     }
 
                     // Coordenadas del "botón" Salir
-                    if (posicionConsola.X >= 79 && posicionConsola.X <= 93 && posicionConsola.Y >= 30 && posicionConsola.Y <= 32)
+                    if (posicionConsola.X >= 78 && posicionConsola.X <= 92 && posicionConsola.Y >= 29 && posicionConsola.Y <= 31)
                     {
                         // Detener la música al salir
                         cancellationTokenSource.Cancel(); // Solicita la cancelación de la tarea de música
@@ -112,7 +111,6 @@ namespace MINIJUEGOS_ASCII
                     }
 
                     // Limpiar el estado del mouse después del clic
-                    //ClearMouseInput();
                 }
             }
         }
@@ -271,17 +269,9 @@ namespace MINIJUEGOS_ASCII
                 Console.SetCursorPosition(0, 0);
                 Console.BackgroundColor = ConsoleColor.White; // Restablecer el color de fondo
                 Console.ForegroundColor = ConsoleColor.Black; // Restablecer el color del texto
-            }
-        }
-        public static void ClearMouseInput()
-        {
-            // Simular un pequeño retraso para evitar que el clic se procese múltiples veces
-            Thread.Sleep(100);
-
-            // Limpiar el búfer de entrada del mouse
-            while (Control.MouseButtons == MouseButtons.Left)
-            {
-                Thread.Sleep(10);
+                // Resturar la música
+                cancellationTokenSource = new CancellationTokenSource();
+                musicaTask = Task.Run(() => Musica(cancellationTokenSource.Token));
             }
         }
     }
@@ -294,8 +284,7 @@ namespace MINIJUEGOS_ASCII
         public static string EscenarioActual = "Zvezda";
         public static bool evento = false; // Nos servirá para saber si ocurrió un evento
 
-
-        //MIEMBROS NECESARIOS PARA LA FUNCIONALIDAD DE MÚSICA
+        // MIEMBROS NECESARIOS PARA LA FUNCIONALIDAD DE MÚSICA
         private static CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         // Escenarios
@@ -306,15 +295,14 @@ namespace MINIJUEGOS_ASCII
         public static string[,] Rassvet = new string[100, 35]; // Conecta mediante ascensor con Zarya
 
         //Personajes
-        static bool[] Dialogos = new bool[2];
+        static bool[] Dialogos = new bool[3];
 
         public static void ConfigurarConsola(bool decision) // Ajustes previos para asegurarnos que el minijuego se vea bien visualmente (true = Viene del menú de minijuegos, false = Regresa al menú de minijuegos)
         {
             if (decision) // Instrucciones cuando viene del Menú de minijuegos
             {
                 Console.CursorVisible = false; // Ocultar el cursor de la consola
-                Console.BackgroundColor = ConsoleColor.Black;
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ResetColor();
             }
             else // Instrucciones cuando regresa del propio minijuego
             {
@@ -422,7 +410,6 @@ namespace MINIJUEGOS_ASCII
                         musicaTask.Wait(); // Espera a que la tarea de música termine
                         break; // Sale del ciclo
                     }
-
                 }
             }
         }
@@ -440,7 +427,6 @@ namespace MINIJUEGOS_ASCII
                     // Coordenadas del "botón" Jugar
                     if (posicionConsola.X >= 77 && posicionConsola.X <= 93 && posicionConsola.Y >= 28 && posicionConsola.Y <= 32)
                     {
-                        SendKeys.SendWait("{ESCAPE}"); // Simular la pulsación de la tecla Escape para no interrumpir la ejecución del programa 
                         Iniciar(); // Inicia el juego
                         break;
                     }
@@ -449,17 +435,11 @@ namespace MINIJUEGOS_ASCII
         }
         public static void Iniciar() // Método que "arranca" nuestro minijuego
         {
-            // Ajustes previos en la consola
-            Console.Clear();
-            Console.SetCursorPosition(0, 0);
-
-
             // Carga en memoria los mapas para el minijuego
-
-            PrepararEscenario("assets/Mapas/Zvezda.txt", Zvezda); // Ejecuta el método PrepararEscenario para cargar los escenarios en los arreglos
-            PrepararEscenario("assets/Mapas/Zarya2.txt", Zarya);
-            PrepararEscenario("assets/Mapas/Nauka.txt", Nauka);
-            PrepararEscenario("assets/Mapas/Rassvet.txt", Rassvet);
+            PrepararEscenario("bin/Debug/assets/Mapas/Zvezda.txt", Zvezda); // Ejecuta el método PrepararEscenario para cargar los escenarios en los arreglos
+            PrepararEscenario("bin/Debug/assets/Mapas/Zarya2.txt", Zarya);
+            PrepararEscenario("bin/Debug/assets/Mapas/Nauka.txt", Nauka);
+            PrepararEscenario("bin/Debug/assets/Mapas/Rassvet.txt", Rassvet);
 
             PintarEscenario(Zvezda, 50, 35); // Imprimimos por primera vez nuestro primer escenario Zvezda
 
@@ -506,6 +486,7 @@ namespace MINIJUEGOS_ASCII
             CoordPersonaje[1] = (byte)(NuevaCoordYPersonaje - 1); // Establece la posición de nuestro personaje y se le resta -1 porque las coords comienzan desde (0,0)
 
             Console.Clear();
+            ConfigurarConsola(true);
 
             for (int y = 0; y < escenario.GetLength(1); y++) // Altura del escenario
             {
@@ -605,9 +586,10 @@ namespace MINIJUEGOS_ASCII
                 }
                 else if (EscenarioActual == "Zvezda" && !misiones[0])
                 {
-                    Console.SetCursorPosition(67, 33);
+                    PintarEscenario(Zvezda, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                    Console.SetCursorPosition(2, 2);
                     Console.ForegroundColor = ConsoleColor.Red; // Cambiar el color del mensaje
-                    Console.Write("Aviso: Debes restaurar la energía del módulo Zvezda");
+                    Console.Write("Aviso: Debes restaurar la energía");
                     Console.ResetColor();
                 }
                 else if (EscenarioActual == "Zarya")
@@ -632,16 +614,25 @@ namespace MINIJUEGOS_ASCII
                                     EscenarioActual = "Nauka";
                                     evento = true;
                                 }
-                                if (CoordPersonaje[0] == 49 && CoordPersonaje[1] == 4) // Traslado de escenario para ir de Zarya a Rassvet mediante ascensor (A)
+                                if (CoordPersonaje[0] == 49 && CoordPersonaje[1] == 4 && misiones[2]) // Traslado de escenario para ir de Zarya a Rassvet mediante ascensor (A)
                                 {
                                     PintarEscenario(Rassvet, 50, 5);
                                     EscenarioActual = "Rassvet";
                                     evento = true;
                                 }
+                                if (CoordPersonaje[0] == 49 && CoordPersonaje[1] == 4 && !misiones[2])
+                                {
+                                    PintarEscenario(Zarya, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                                    Console.SetCursorPosition(2, 2);
+                                    Console.ForegroundColor = ConsoleColor.Red; // Cambiar el color del mensaje
+                                    Console.Write("Aviso: Sin energía en Rassvet");
+                                    Console.ResetColor();
+                                }
                             }
                             else
                             {
-                                Console.SetCursorPosition(67, 33);
+                                PintarEscenario(Zarya, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                                Console.SetCursorPosition(2, 2);
                                 Console.ForegroundColor = ConsoleColor.Red; // Cambiar el color del mensaje
                                 Console.Write("Aviso: Debes recolectar todos los suministros");
                                 Console.ResetColor();
@@ -688,16 +679,16 @@ namespace MINIJUEGOS_ASCII
                 case "Zvezda":
                     if (coordenadas[0] > 35 && coordenadas[0] < 63 && coordenadas[1] == 29 && !Dialogos[0])
                     {
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-1.txt", 51, 23);
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-1.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1)); // Le sumo +1 porque el método PintarEscenario por defecto me resta -1
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-2.txt", 51, 23);
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-2.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-3.txt", 51, 23);
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-3.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-4.txt", 51, 23);
+                        PintarDialogo("assets/Dialogos/ZvezdaDialogo1-4.txt", 27, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
 
@@ -708,22 +699,22 @@ namespace MINIJUEGOS_ASCII
                 case "Zarya":
                     if (coordenadas[0] > 45 && coordenadas[0] < 54 && coordenadas[1] == 27 && !Dialogos[1])
                     {
-                        PintarDialogo("assets/Dialogos/ZaryaDialogo1-1.txt", 51, 23);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZaryaDialogo1-1.txt", 25, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1)); // Le sumo +1 porque el método PintarEscenario por defecto me resta -1
-                        PintarDialogo("assets/Dialogos/ZaryaDialogo1-2.txt", 51, 23);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZaryaDialogo1-2.txt", 25, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZaryaDialogo1-3.txt", 51, 23);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZaryaDialogo1-3.txt", 25, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZaryaDialogo1-4.txt", 51, 23);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZaryaDialogo1-4.txt", 25, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZaryaDialogo1-5.txt", 51, 23);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZaryaDialogo1-5.txt", 25, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
-                        PintarDialogo("assets/Dialogos/ZaryaDialogo1-6.txt", 51, 23);
+                        PintarDialogo("bin/Debug/assets/Dialogos/ZaryaDialogo1-6.txt", 25, 20);
                         Console.ReadKey();
                         PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
 
@@ -731,6 +722,19 @@ namespace MINIJUEGOS_ASCII
                         evento = true;
                     }
                     break;
+                case "Rassvet":
+                    if (coordenadas[0] > 39 && coordenadas[0] < 57 && coordenadas[1] == 20 && !Dialogos[2])
+                    {
+                        PintarDialogo("assets/Dialogos/RassvetDialogo1-1.txt", 18, 20);
+                        Console.ReadKey();
+                        PintarEscenario(escenario, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1)); // Le sumo +1 porque el método PintarEscenario por defecto me resta -1
+                        PintarDialogo("assets/Dialogos/RassvetDialogo1-2.txt", 18, 20);
+                        Console.ReadKey();
+
+                        Dialogos[2] = true;
+                        evento = true;
+                    }
+                        break;
                 default:
                     break;
             }
@@ -740,14 +744,17 @@ namespace MINIJUEGOS_ASCII
             {
                 escenario[coordenadas[0], coordenadas[1]] = "░"; // Eliminar el suministro del mapa
                 SuministrosRecolectados++;
-                Console.SetCursorPosition(67, 31); // Fuera del área del escenario
+
+                PintarEscenario(Zarya, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                Console.SetCursorPosition(2, 2); // Fuera del área del escenario
                 Console.WriteLine($"Suministros recolectados: {SuministrosRecolectados}/{SuministrosTotales}");
 
                 if (SuministrosRecolectados == SuministrosTotales)
                 {
-                    Console.SetCursorPosition(67, 33);
+                    PintarEscenario(Zarya, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                    Console.SetCursorPosition(2, 2);
                     Console.ForegroundColor = ConsoleColor.Green; // Cambiar el color del mensaje
-                    Console.Write("Aviso: ¡Todos los suministros recolectados!  ");
+                    Console.Write("Aviso: ¡Todos los suministros recolectados!");
                     Console.ResetColor();
                     // Desbloquear acceso a Nauka
                     misiones[1] = true; // Suponiendo que misiones[1] controla el acceso a Nauka
@@ -755,6 +762,54 @@ namespace MINIJUEGOS_ASCII
 
                 evento = true; // Hubo un evento (recolectar suministro)
             }
+
+            // Resolver acertijos en Nauka
+            if (EscenarioActual == "Nauka" && celda == "?" && !misiones[2])
+            {
+                Console.SetCursorPosition(2, 2);
+                Console.Write("Memoriza esta secuencia: ");
+
+                Random rand = new Random();
+                int[] secuencia = new int[5]; // Longitud de la secuencia
+
+                for (int i = 0; i < secuencia.Length; i++)
+                {
+                    secuencia[i] = rand.Next(0, 9); // Números del 0 al 9
+                    Console.Write(secuencia[i] + " ");
+                }
+
+                Thread.Sleep(2000); // Espera 3 segundos
+
+                PintarEscenario(Nauka, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                Console.SetCursorPosition(2, 2);
+                Console.Write("Ingresa la secuencia: ");
+
+                string respuesta = Console.ReadLine();
+
+                // Validar respuesta
+                string secuenciaCorrecta = string.Join("", secuencia);
+                if (respuesta == secuenciaCorrecta)
+                {
+                    PintarEscenario(Nauka, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                    Console.SetCursorPosition(2, 2);
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine("¡Correcto! Se ha desbloqueado el acceso a Rassvet.");
+                    Console.ResetColor();
+                    misiones[2] = true; // Desbloquear Rassvet
+                }
+                else
+                {
+                    PintarEscenario(Nauka, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                    Console.SetCursorPosition(2, 2);
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine("Incorrecto. Inténtalo de nuevo.");
+                    Console.ResetColor();
+                }
+
+                Console.ReadKey();
+                evento = true;
+            }
+
             return evento;
         }
         public static void ActualizarEscenario(string[,] escenario, int AnteriorCoordXPersonaje, int AnteriorCoordYPersonaje) // Vuelve a imprimir la celda en la que estaba el personaje e imprime el personaje en su nueva posición
@@ -767,14 +822,15 @@ namespace MINIJUEGOS_ASCII
             Console.Write("O");
         }
 
-        //    Task.Delay(100).Wait(); // Mantiene el bucle
 
-        // Variables que necesita el método ManejarInterruptores
-        static bool NoActualizarEscenario = false;
+        // M I E M B R O S   P A R A   L A S   T A R E A S   D E L   M I N I J U E G O
+
+        // Miembros que necesita el método ManejarInterruptores
+        static bool NoActualizarEscenario = false; // Conecta con Movimiento()
         static bool[] interruptores = new bool[3]; // Guarda el estado de los interruptores
         static int[] ordenActivacion = new int[3] { -1, -1, -1 }; // Guarda el orden en que se activan
         static byte siguienteInterruptor = 0; // Indica qué interruptor se debe presionar en el orden correcto
-        static bool[] misiones = new bool[2];
+        static bool[] misiones = new bool[3];
         public static void ManejarInterruptores(string[,] escenario, int[] coordenadas)
         {
             string celda = escenario[coordenadas[0], coordenadas[1]];
@@ -819,18 +875,21 @@ namespace MINIJUEGOS_ASCII
                     if (interruptores[0] && interruptores[1] && interruptores[2])
                     {
                         // Comprobar si se activaron en el orden correcto
-                        Console.SetCursorPosition(67, 33);
-                        Console.ForegroundColor = ConsoleColor.Green; // Cambiar el color del mensaje
+                        
                         if (ordenActivacion[0] == 0 && ordenActivacion[1] == 1 && ordenActivacion[2] == 2)
                         {
-                            Console.Write("Aviso: Energía restaurada en Zvezda                ");
+                            PintarEscenario(Zvezda, (byte)(CoordPersonaje[0]+1), (byte)(CoordPersonaje[1]+1));
+                            Console.SetCursorPosition(2, 2);
+                            Console.ForegroundColor = ConsoleColor.Green; // Cambiar el color del mensaje
+                            Console.Write("Aviso: Energía restaurada en Zvezda");
                             misiones[0] = true;
                         }
                         else
                         {
                             // Si el orden no es el correcto, reiniciar todo y permitir reintentar
                             ResetearInterruptores();
-                            Console.SetCursorPosition(67, 33);
+                            PintarEscenario(Zvezda, (byte)(CoordPersonaje[0] + 1), (byte)(CoordPersonaje[1] + 1));
+                            Console.SetCursorPosition(2, 2);
                             Console.ForegroundColor = ConsoleColor.Red; // Cambiar el color del mensaje
                             Console.Write("Aviso: Orden incorrecto, vuelve a intentarlo");
                         }
@@ -841,7 +900,6 @@ namespace MINIJUEGOS_ASCII
                 evento = true; // Indica que ocurrió un evento
             }
         }
-
         public static void ResetearInterruptores()
         {
             // Restablecer el estado de los interruptores y el orden de activación
@@ -850,11 +908,11 @@ namespace MINIJUEGOS_ASCII
             siguienteInterruptor = 0;
         }
 
-        // Variables que necesita el método ManejarInterruptores
+        // Miembros que necesita el método EventosEscenario para el sistema de Recolectar suministros en Zarya
         public static int SuministrosRecolectados = 0; // Cantidad de suministros recolectados
         public static int SuministrosTotales = 5; // Total de suministros en Zarya (ajusta según tu mapa)
 
-        
+
     }
     internal static class ConsoleHelper // Es una clase que se encarga de deshabilitar el Modo de Selección Rápida (QuickEdit Mode) 
     {
@@ -1085,28 +1143,65 @@ namespace MINIJUEGOS_ASCII
             Console.ResetColor();
         }
     }
-
     internal class Ahorcado
     {
+        private static SoundPlayer player;
+
+        public static void Ejecutar()
+        {
+            ReproducirMusicaFondo();
+            MostrarMenu();
+        }
+
+        static void MostrarMenu()
+        {
+            while (true)
+            {
+                Console.Clear();
+                string asciiArt = @"
+   ___  _           ____  __ __   ___   ____      __   ____  ___     ___      
+  /  _]| |         /    ||  |  | /   \ |    \    /  ] /    ||   \   /   \     
+ /  [_ | |        |  o  ||  |  ||     ||  D  )  /  / |  o  ||    \ |     |    
+|    _]| |___     |     ||  _  ||  O  ||    /  /  /  |     ||  D  ||  O  |    
+|   [_ |     |    |  _  ||  |  ||     ||    \ /   \_ |  _  ||     ||     |    
+|     ||     |    |  |  ||  |  ||     ||  .  \\     ||  |  ||     ||     |    
+|_____||_____|    |__|__||__|__| \___/ |__|\_| \____||__|__||_____| \___/     
+";
+
+                Console.WriteLine(asciiArt);
+                Console.WriteLine("\nINSTRUCCIONES:");
+                Console.WriteLine("- Adivina la palabra oculta antes de que se complete el ahorcado.");
+                Console.WriteLine("- Ingresa una letra por turno.");
+                Console.WriteLine("- Si aciertas, la letra se mostrará en su posición.");
+                Console.WriteLine("- Si fallas, perderás un intento.");
+                Console.WriteLine("- Pierdes si llegas a 7 errores.");
+                Console.WriteLine("- Tienes una opción de ayuda, la cual te mostrará una letra, pero al utilizarla perderás un intento (la ayuda solo se puede usar 2 veces y no cuando solo falta una letra).");
+                Console.WriteLine("\n1. Iniciar Juego");
+                Console.WriteLine("2. Salir");
+                Console.Write("Selecciona una opción: ");
+
+                string opcion = Console.ReadLine();
+
+                if (opcion == "1")
+                    Iniciar();
+                else if (opcion == "2")
+                    break;
+                else
+                {
+                    Console.WriteLine("Opción inválida. Presiona una tecla para intentar de nuevo...");
+                    Console.ReadKey();
+                }
+            }
+        }
+
         public static void Iniciar()
         {
             Console.Clear();
-
             Dictionary<string, string> palabras = new Dictionary<string, string>
         {
             { "compilador", "Traduce código fuente a código máquina." },
             { "algoritmo", "Conjunto de pasos para resolver un problema." },
-            { "variable", "Espacio en memoria que almacena un valor." },
-            { "funcion", "Bloque de código reutilizable." },
-            { "recursividad", "Cuando una función se llama a sí misma." },
-            { "programacion", "Proceso de escribir código para computadoras." },
-            { "depuracion", "Proceso de encontrar y corregir errores." },
-            { "framework", "Conjunto de herramientas para desarrollo." },
-            { "matriz", "Estructura de datos en filas y columnas." },
-            { "puntero", "Variable que almacena direcciones de memoria." },
-            { "interfaz", "Define métodos sin implementarlos." },
-            { "herencia", "Mecanismo de reutilización en POO." },
-            { "clase", "Plantilla para crear objetos en POO." }
+            { "variable", "Espacio en memoria que almacena un valor." }
         };
 
             Random aleatorio = new Random();
@@ -1115,8 +1210,8 @@ namespace MINIJUEGOS_ASCII
             string pista = palabraSeleccionada.Value;
             char[] palabraAdivinada = new string('_', palabraSecreta.Length).ToCharArray();
             HashSet<char> letrasIncorrectas = new HashSet<char>();
-            int usosDeAyuda = 0;
             int intentosRestantes = 7;
+            int usosAyuda = 0;
 
             while (intentosRestantes > 0 && new string(palabraAdivinada) != palabraSecreta)
             {
@@ -1125,78 +1220,68 @@ namespace MINIJUEGOS_ASCII
                 Console.WriteLine($"Pista: {pista}");
                 Console.WriteLine($"Palabra: {new string(palabraAdivinada)}");
                 Console.WriteLine($"Letras incorrectas: {string.Join(", ", letrasIncorrectas)}");
-                Console.WriteLine($"\nEscribe una letra o 'ayuda' para revelar una letra (máx. 2 veces).");
-                Console.Write("Ingresa una opción: ");
+                Console.WriteLine($"Usos de ayuda restantes: {2 - usosAyuda}");
+                Console.Write("Ingresa una letra o 'ayuda' para recibir una letra extra: ");
 
                 string entrada = Console.ReadLine()?.Trim().ToLower();
-
                 if (entrada == "ayuda")
                 {
-                    int letrasFaltantes = palabraAdivinada.Count(c => c == '_');
-
-                    if (usosDeAyuda < 2 && intentosRestantes > 1 && letrasFaltantes > 1)
+                    if (usosAyuda < 2 && new string(palabraAdivinada).Contains("_"))
                     {
-                        RevelarLetra(palabraSecreta, palabraAdivinada);
+                        if (new string(palabraAdivinada).Count(c => c == '_') == 1)
+                        {
+                            Console.WriteLine("No puedes usar la ayuda cuando falta solo una letra.");
+                            Console.ReadKey();
+                            continue;
+                        }
+
+                        usosAyuda++;
+                        char letraAyuda = palabraSecreta.First(c => palabraAdivinada.Contains(c) == false);
+                        for (int i = 0; i < palabraSecreta.Length; i++)
+                        {
+                            if (palabraSecreta[i] == letraAyuda)
+                                palabraAdivinada[i] = letraAyuda;
+                        }
+
                         intentosRestantes--;
-                        usosDeAyuda++;
-
-
-                        if (new string(palabraAdivinada) == palabraSecreta)
-                            break;
                     }
                     else
                     {
-                        Console.WriteLine("No puedes pedir más ayuda.");
+                        Console.WriteLine("Ya has usado la ayuda dos veces o no puedes usarla ahora.");
                         Console.ReadKey();
+                        continue;
                     }
-                    continue;
                 }
-
-                if (entrada.Length != 1 || !char.IsLetter(entrada[0]))
+                else if (entrada.Length != 1 || !char.IsLetter(entrada[0]))
                 {
-                    Console.WriteLine("Entrada inválida. Ingresa solo una letra.");
+                    Console.WriteLine("Entrada inválida. Presiona una tecla para continuar...");
                     Console.ReadKey();
                     continue;
                 }
-
-                char intento = entrada[0];
-
-                if (palabraSecreta.Contains(intento))
+                else
                 {
-                    for (int i = 0; i < palabraSecreta.Length; i++)
+                    char intento = entrada[0];
+                    if (palabraSecreta.Contains(intento))
                     {
-                        if (palabraSecreta[i] == intento)
-                        {
-                            palabraAdivinada[i] = intento;
-                        }
+                        for (int i = 0; i < palabraSecreta.Length; i++)
+                            if (palabraSecreta[i] == intento)
+                                palabraAdivinada[i] = intento;
+                    }
+                    else if (!letrasIncorrectas.Contains(intento))
+                    {
+                        letrasIncorrectas.Add(intento);
+                        intentosRestantes--;
                     }
                 }
-                else if (!letrasIncorrectas.Contains(intento))
-                {
-                    letrasIncorrectas.Add(intento);
-                    intentosRestantes--;
-                }
             }
-
-
 
             Console.Clear();
             DibujarAhorcado(7 - intentosRestantes);
+            Console.WriteLine(new string(palabraAdivinada) == palabraSecreta ?
+                $"\n¡Felicidades! Has encontrado la palabra: {palabraSecreta}" :
+                $"\nPerdiste. La palabra era: {palabraSecreta}");
 
-            if (new string(palabraAdivinada) == palabraSecreta)
-            {
-                Console.WriteLine($"\n¡Felicidades! Has encontrado la palabra: {palabraSecreta}");
-            }
-            else
-            {
-                Console.WriteLine($"\nPerdiste. La palabra era: {palabraSecreta}");
-
-                Console.Beep(400, 500);
-                Console.Beep(300, 500);
-                Console.Beep(200, 800);
-            }
-
-            Console.WriteLine("\nPresiona cualquier tecla para salir...");
+            Console.WriteLine("\nPresiona cualquier tecla para volver al menú...");
             Console.ReadKey();
         }
 
@@ -1229,28 +1314,20 @@ namespace MINIJUEGOS_ASCII
                 Console.WriteLine(linea);
             }
         }
-        static void RevelarLetra(string palabraSecreta, char[] palabraAdivinada)
+
+        static void ReproducirMusicaFondo()
         {
-            Random rand = new Random();
-            List<int> posicionesOcultas = new List<int>();
-
-            for (int i = 0; i < palabraSecreta.Length; i++)
+            try
             {
-                if (palabraAdivinada[i] == '_')
-                {
-                    posicionesOcultas.Add(i);
-                }
+                player = new SoundPlayer(@"C:\Users\proga\source\repos\ConsoleApp1\ConsoleApp1\musicaproyecto.wav");
+                player.PlayLooping();
             }
-
-            if (posicionesOcultas.Count > 0)
+            catch (Exception e)
             {
-                int indice = posicionesOcultas[rand.Next(posicionesOcultas.Count)];
-                palabraAdivinada[indice] = palabraSecreta[indice];
+                Console.WriteLine($"Error al cargar la música: {e.Message}");
             }
         }
-
     }
-
     internal class FuncionalidadMouse
     {
         public static Point ObtenerPosicionMouseEnConsola()
