@@ -1,0 +1,4 @@
+.-------------------------------------------------.
+| Te cuento... Los sistemas se están cayendo en   |
+| toda la estación, y eso no es bueno.            |
+'-------------------------------------------------'

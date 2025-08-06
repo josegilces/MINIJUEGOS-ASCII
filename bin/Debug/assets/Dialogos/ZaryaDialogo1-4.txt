@@ -1,0 +1,6 @@
+.------------------------------------------------------.
+| También hay suministros en este módulo. Algunos son  |
+| restos de las primeras misiones, pero deberían ser   |
+| útiles. Busca bien, nunca sabes qué podrías encontrar|
+| en un lugar como este.                               |
+'------------------------------------------------------'

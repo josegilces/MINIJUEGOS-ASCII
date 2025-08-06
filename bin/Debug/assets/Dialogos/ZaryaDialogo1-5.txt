@@ -1,0 +1,7 @@
+.---------------------------------------------------------.
+| Ah, y ten cuidado. Algunas compuertas pueden haberse    |
+| bloqueado debido a los fallos de energía. Si encuentras |
+| algo fuera de lo común, dímelo. Este módulo ha estado   |
+| aquí más tiempo que cualquier otro, y no siempre sigue  |
+| las reglas que esperamos.                               |
+'---------------------------------------------------------'

@@ -1,0 +1,8 @@
+.------------------------------------------------.
+| No tenemos mucho tiempo. Debes restaurar todo  |
+| el sistema de navegación antes de que perdamos |
+| el control por completo. Para eso, necesitas   |
+| primero restaurar la energía de este módulo,   |
+| activando tres interruptores en el orden       |
+| correcto.                                      |
+'------------------------------------------------'

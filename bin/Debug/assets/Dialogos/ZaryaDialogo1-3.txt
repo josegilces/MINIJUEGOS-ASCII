@@ -1,0 +1,8 @@
+.-------------------------------------------------------.
+| Aun así, sigue siendo crucial. Muchos de los sistemas |
+| antiguos todavía dependen de él. El problema es que la|
+| energía aquí es inestable. Algunas de las baterías de |
+| respaldo aún funcionan, pero los paneles de control   |
+| pueden haber fallado. Si quieres seguir adelante,     |
+| tendremos que reactivarlos.                           |
+'-------------------------------------------------------'

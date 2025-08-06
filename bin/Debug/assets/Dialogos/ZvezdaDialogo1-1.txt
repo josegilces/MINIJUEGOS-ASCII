@@ -1,0 +1,5 @@
+.----------------------------------------------------.
+| ¡Bienvenido a la ISS! Me alegra que hayas llegado, |
+| ya necesitabamos a un ingeniero en software aquí.  |
+'----------------------------------------------------'
+      Presione cualquier tecla para continuar...

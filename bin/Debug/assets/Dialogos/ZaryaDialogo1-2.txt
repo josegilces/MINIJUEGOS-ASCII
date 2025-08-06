@@ -1,0 +1,8 @@
+.----------------------------------------------------------.
+| ¿Sabías que este módulo fue el primero en la estación?   |
+| Sí, se lanzó en 1998, mucho antes de que todo esto tomara|
+| forma. En ese entonces, Zarya era el corazón de la ISS,  |
+| proporcionando energía y almacenamiento. Pero con el     |
+| tiempo, fue quedando en segundo plano, reemplazado por   |
+| módulos más modernos.                                    |
+'----------------------------------------------------------'
